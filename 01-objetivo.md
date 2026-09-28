@@ -2,115 +2,64 @@
 
 ### Instala paqueterias
 
-```R
-# install.packages(c("rgbif", "CoordinateCleaner", "dplyr", "readr", "terra"))
-library(rgbif)
-library(CoordinateCleaner)
-library(dplyr)
-library(readr)
-library(terra)
-```
+# Objetivo 1 · Obtención y limpieza de registros de GBIF
 
-### Crea directorios de entrada
+Flujo basado en la práctica de GBIF vista en clase (portal web → Excel → QGIS → Excel → Maxent).
+Se repite una vez por especie.
 
-```
-dir.create("data/raw", recursive = TRUE, showWarnings = FALSE)
-dir.create("data/processed", recursive = TRUE, showWarnings = FALSE)
-dir.create("docs", showWarnings = FALSE)
-```
+**Especies:** *Urocyon cinereoargenteus*, *Odocoileus virginianus*, *Canis latrans*, *Lynx rufus*, *Puma concolor*.
 
-# ---- 1. Credenciales de GBIF ------------------------------------------------
-# Crea una cuenta en https://www.gbif.org y guarda tus datos UNA vez con:
-#   usethis::edit_r_environ()
-# y agrega estas tres líneas al archivo que se abre (luego reinicia R):
-#   GBIF_USER=tu_usuario
-#   GBIF_PWD=tu_contraseña
-#   GBIF_EMAIL=tu_correo
-# Nunca escribas la contraseña dentro del script ni la subas a GitHub.
+## 1. Descarga en GBIF
 
-# ---- 2. Especies y claves taxonómicas ---------------------------------------
-especies <- c("Urocyon cinereoargenteus",
-              "Odocoileus virginianus",
-              "Canis latrans",
-              "Lynx rufus",
-              "Puma concolor")
+1. Entrar a gbif.org con la cuenta.
+2. Escribir el nombre de la especie en el buscador y abrir **Ocurrencias**.
+3. Aplicar los filtros del panel izquierdo:
+   - **Año:** 1980 – 2020 (compatible con las capas climáticas y con el periodo del antecedente, 2018–2020).
+   - **Ubicación:** incluir solo registros con coordenadas.
+   - **País:** México.
+4. Clic en **Descargar** → formato **Datos simples de ocurrencia** → taxonomía **Catalogue of Life**
+   (predeterminada).
+5. Llega un enlace al correo. Se descarga un `.zip` con el archivo de ocurrencias.
+6. Copiar la **cita con DOI** que aparece en la página de la descarga y pegarla en `docs/citas_GBIF.txt`.
 
-claves <- sapply(especies, function(sp) name_backbone(name = sp)$usageKey)
-print(claves)  # revisa que ninguna sea NA
+Guardar el `.zip` en `data/raw/`.
 
-# ---- 3. Parámetros de temporalidad -----------------------------------------
-# Periodo alineado con las variables climáticas y con el antecedente
-# (Plata-Pérez et al. 2024, muestreo 2018–2020). Ver README / docs.
-anio_inicio <- 1980
-anio_fin    <- 2020
+## 2. Primera limpieza en Excel
 
-# ---- 4. Solicitud de descarga (una sola, con DOI citable) -------------------
-# Se descarga el área de distribución completa (no solo México) para no
-# truncar el nicho climático de especies con rangos amplios.
-descarga <- occ_download(
-  pred_in("taxonKey", claves),
-  pred("hasCoordinate", TRUE),
-  pred("hasGeospatialIssue", FALSE),
-  pred("occurrenceStatus", "PRESENT"),
-  pred_in("basisOfRecord", c("HUMAN_OBSERVATION", "PRESERVED_SPECIMEN",
-                             "MACHINE_OBSERVATION", "OCCURRENCE")),
-  pred_gte("year", anio_inicio),
-  pred_lte("year", anio_fin),
-  pred_lte("coordinateUncertaintyInMeters", 1000),  # ~ resolución 30 s
-  format = "SIMPLE_CSV"
-)
+1. Abrir el archivo de ocurrencias en Excel, comenzando:
+   Datos → obtener datos → desde texto/CSV, con delimitador **Tabulador**.
+3. Conservar solo 4 columnas: `gbifID`, `decimalLatitude`, `decimalLongitude`, `species`.
+4. Ordenar `decimalLatitude` de mayor a menor y eliminar las filas sin coordenadas.
+5. Guardar como **CSV delimitado por comas**.
+6. Quitar duplicados de las columnas de laitud y longitud
+*Odocoileus virginianus* 1732 se encontraron y quitaron valores duplicados -2710 quedan valores unicos
 
-# La descarga tarda de minutos a horas; esta línea espera a que termine
-occ_download_wait(descarga)
 
-# Guarda la cita con DOI (obligatoria para reproducibilidad)
-cita <- gbif_citation(occ_download_meta(descarga))$download
-writeLines(cita, "docs/cita_GBIF.txt")
-print(cita)
+## 3. Revisión en (QGIS)[https://qgis.org/]
 
-# ---- 5. Importar ------------------------------------------------------------
-crudo <- occ_download_get(descarga, path = "data/raw", overwrite = TRUE) |>
-  occ_download_import()
+1. **Capa → Añadir capa → Añadir capa de texto delimitado**.
+2. Archivo CSV delimitado por comas · Campo X: `decimalLongitude` · Campo Y: `decimalLatitude` · SRC: **EPSG:4326 – WGS 84**.
+3. Guardar la capa como **shapefile (.shp)** para poder editarla.
+4. Activar la edición, seleccionar los puntos erróneos (en el mar, fuera del área de distribución conocida) y eliminarlos.
+5. Guardar los cambios.
 
-registros <- crudo |>
-  select(gbifID, species, decimalLongitude, decimalLatitude, year,
-         basisOfRecord, coordinateUncertaintyInMeters, countryCode) |>
-  filter(species %in% especies)
+6. 
 
-cat("Registros crudos por especie:\n")
-print(table(registros$species))
+## 4. Archivo final en Excel
 
-# ---- 6. Limpieza de coordenadas ---------------------------------------------
-limpios <- registros |>
-  distinct(species, decimalLongitude, decimalLatitude, .keep_all = TRUE) |>
-  clean_coordinates(lon = "decimalLongitude", lat = "decimalLatitude",
-                    species = "species", countries = "countryCode",
-                    tests = c("capitals", "centroids", "equal", "gbif",
-                              "institutions", "zeros", "seas"),
-                    value = "clean")
+1. Abrir el `.dbf` del shapefile en Excel.
+2. Eliminar la columna `gbifID`.
+3. Ordenar las columnas como **Species · Longitude · Latitude**.
+4. Guardar como **CSV delimitado por comas** en `data/processed/` con el nombre de la especie
+   (p. ej. `Canis_latrans.csv`).
 
-# ---- 7. Adelgazamiento espacial (1 registro por celda de ~1 km) -------------
-# Reduce el sesgo de muestreo (p. ej. muchos registros en ciudades)
-# usando la misma rejilla que las variables climáticas (30 s).
-rejilla <- rast(resolution = 30 / 3600)  # rejilla global de 30 s de arco
+Este archivo está listo para Maxent.
 
-limpios$celda <- cellFromXY(rejilla,
-                            as.matrix(limpios[, c("decimalLongitude",
-                                                  "decimalLatitude")]))
-adelgazados <- limpios |>
-  distinct(species, celda, .keep_all = TRUE) |>
-  select(-celda)
+## Nota sobre temporalidad
 
-cat("Registros finales por especie:\n")
-print(table(adelgazados$species))
-
-# ---- 8. Guardar -------------------------------------------------------------
-# Formato para Maxent: especie, longitud, latitud (como en la práctica de Q)
-final <- adelgazados |>
-  transmute(species,
-            longitude = decimalLongitude,
-            latitude  = decimalLatitude,
-            year)
-
-write_csv(final, "data/processed/registros_limpios.csv")
-write_csv(select(final, -year), "data/processed/registros_maxent.csv")
+- Las capas de WorldClim representan el clima promedio de 1970–2000. El filtro de 1980–2020 mantiene
+  los registros dentro de un periodo compatible y termina donde termina el muestreo del antecedente.
+- El nicho climático se estima con clima promedio de largo plazo, por lo que no se empareja año por
+  año con los registros.
+- Limitación a declarar: la mayoría de los registros recientes (posteriores a 2010) queda fuera del
+  periodo de las capas climáticas.
