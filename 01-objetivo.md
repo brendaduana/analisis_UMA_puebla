@@ -32,8 +32,12 @@ Guardar el `.zip` en `data/raw/`.
 4. Ordenar `decimalLatitude` de mayor a menor y eliminar las filas sin coordenadas.
 5. Guardar como **CSV delimitado por comas**.
 6. Quitar duplicados de las columnas de laitud y longitud
-*Odocoileus virginianus* 1732 se encontraron y quitaron valores duplicados -2710 quedan valores unicos
 
+786 - *Urocyon cinereoargenteus* 1496 se encontraron y quitaron valores duplicados - 1883 quedan valores unicos
+787 - *Odocoileus virginianus* 1732 se encontraron y quitaron valores duplicados - 2710 quedan valores unicos
+789 - *Canis latrans* 804 se encontraron y quitaron valores duplicados - 1811 quedan valores unicos
+791 - *Lynx rufus* 230 se encontraron y quitaron valores duplicados - 1014 quedan valores unicos
+794 - *Lynx rufus* 453 se encontraron y quitaron valores duplicados - 591 quedan valores unicos
 
 ## 3. Revisión en (QGIS)[https://qgis.org/]
 
