@@ -39,23 +39,4 @@ Como objetivos especificos se pretende:
 6. Generar un repositorio que documente el flujo de trabajo y de desiciones para llegar a responder a la pregunta de ivestigación --> MA
 
 *como idea guía es: que este proyecto pueda ayudar a comprender el punto ecológico al comparar la detección de mamiferos por ambos metodos de muestreo/monitoreo y ver si este script se puede reutilizar con datos que obtenga en un futuro.
-Posible estrucutura del repo:
-
-├── README.md
-├── data/
-│   ├── raw/          # descargas originales de GBIF (no se editan)
-│   └── processed/    # registros depurados y tablas de variables
-├── scripts/
-│   ├── 01_gbif_limpieza.R
-│   ├── 02_variables_correlacion_pca.R
-│   ├── 03_modelos_maxent.R
-│   ├── 04_posicion_amplitud_omi.R
-│   ├── 05_comparacion_nicho.R
-│   ├── 06_sintesis.R
-│   └── 07_referencias_12S_COI.R
-├── results/
-│   ├── figures/
-│   └── tables/
-└── docs/             # notas y referencias
-
 
