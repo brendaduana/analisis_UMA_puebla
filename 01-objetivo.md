@@ -50,7 +50,7 @@ Repetir este paso una vez por especie.
 | 0009791 | *Lynx rufus* | 230 | 1 014 |
 | 0009794 | *Puma concolor* | 453 | 591 |
 
-## 3. Revisiar en (QGIS)[https://qgis.org/]
+## 3. Revisar en [QGIS](https://qgis.org/).
 
 Repetir este paso una vez por especie.
 
