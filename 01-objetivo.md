@@ -34,9 +34,13 @@ Guardar el `.zip` en `data/raw/`.
 6. Quitar duplicados de las columnas de laitud y longitud
 
 786 - *Urocyon cinereoargenteus* 1496 se encontraron y quitaron valores duplicados - 1883 quedan valores unicos
+
 787 - *Odocoileus virginianus* 1732 se encontraron y quitaron valores duplicados - 2710 quedan valores unicos
+
 789 - *Canis latrans* 804 se encontraron y quitaron valores duplicados - 1811 quedan valores unicos
+
 791 - *Lynx rufus* 230 se encontraron y quitaron valores duplicados - 1014 quedan valores unicos
+
 794 - *Lynx rufus* 453 se encontraron y quitaron valores duplicados - 591 quedan valores unicos
 
 ## 3. Revisión en (QGIS)[https://qgis.org/]
@@ -47,14 +51,13 @@ Guardar el `.zip` en `data/raw/`.
 4. Activar la edición, seleccionar los puntos erróneos (en el mar, fuera del área de distribución conocida) y eliminarlos.
 5. Guardar los cambios.
 
-6. 
-
 ## 4. Archivo final en Excel
 
-1. Abrir el `.dbf` del shapefile en Excel.
-2. Eliminar la columna `gbifID`.
-3. Ordenar las columnas como **Species · Longitude · Latitude**.
-4. Guardar como **CSV delimitado por comas** en `data/processed/` con el nombre de la especie
+1. Archivo → Abrir → Examinar, cambia el tipo de archivo a Todos los archivos
+2. Abrir el `.dbf` del shapefile en Excel.
+3. Eliminar la columna `gbifID`.
+4. Ordenar las columnas como **Species · Longitude · Latitude**.
+5. Guardar como **CSV delimitado por comas** en `data/processed/` con el nombre de la especie
    (p. ej. `Canis_latrans.csv`).
 
 Este archivo está listo para Maxent.
