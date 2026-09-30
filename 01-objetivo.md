@@ -1,4 +1,4 @@
-# Objetivo 1 · Obtención y limpieza de registros de GBIF
+# Objetivo 1 - Obtención y limpieza de registros de GBIF
 
 El primer flujo de trabajo consiste en lo siguiente:
 
@@ -34,10 +34,10 @@ Repetir este paso una vez por especie.
 
 **Especies:** *Urocyon cinereoargenteus*, *Odocoileus virginianus*, *Canis latrans*, *Lynx rufus*, *Puma concolor*.
 
-1. Abrir el archivo de ocurrencias desde **Datos → Obtener datos → Desde texto/CSV**, con delimitador **Tabulador**.
+1. Abrir el archivo de ocurrencias desde **Datos > Obtener datos > Desde texto/CSV**, con delimitador **Tabulador**.
 2. Conservar solo cuatro columnas: `gbifID`, `decimalLatitude`, `decimalLongitude` y `species`.
 3. Ordenar `decimalLatitude` de mayor a menor y eliminar las filas sin coordenadas.
-4. Quitar los duplicados considerando las columnas de latitud y longitud (**Datos → Quitar duplicados**).
+4. Quitar los duplicados considerando las columnas de latitud y longitud (**Datos > Quitar duplicados**).
 5. Guardar como **CSV delimitado por comas** en `01-data-unclean-qgis/`.
 
 **Resultados de la eliminación de duplicados:**
@@ -56,11 +56,15 @@ Repetir este paso una vez por especie.
 
 **Especies:** *Urocyon cinereoargenteus*, *Odocoileus virginianus*, *Canis latrans*, *Lynx rufus*, *Puma concolor*.
 
-1. Ir a **Capa → Añadir capa → Añadir capa de texto delimitado**.
-2. Cargar el CSV de `01-data-unclean-qgis/` con esta configuración: archivo CSV delimitado por comas · Campo X: `decimalLongitude` · Campo Y: `decimalLatitude` · SRC: **EPSG:4326 – WGS 84**.
-3. Exportar la capa como **shapefile (.shp)** en `02-data-clean-qgis/` para poder editarla.
-4. Activar la edición, seleccionar los puntos erróneos (en el mar o fuera del área de distribución conocida) y eliminarlos.
-5. Guardar los cambios.
+1. Ir a **Capa > Añadir capa > Añadir capa de texto delimitado**.
+2. Cargar el CSV de `01-data-unclean-qgis/` con esta configuración:
+   - Archivo CSV delimitado por comas
+   - Campo X: `decimalLongitude`
+   - Campo Y: `decimalLatitude`
+   - SRC: `EPSG:4326 – WGS 84`
+4. Exportar la capa como **shapefile (.shp)** en `02-data-clean-qgis/` para poder editarla.
+5. Activar la edición, seleccionar los puntos erróneos (en el mar o fuera del área de distribución conocida) y eliminarlos.
+6. Guardar los cambios.
 
 ## 4. Archivo final en Excel
 
@@ -84,6 +88,8 @@ Estos cinco archivos CSV son la entrada de registros para Maxent.
 
 ## 5. Descarga de WorldClim
 
+Por último, realiza los siguiente pasos:
+
 1. Entrar a la página de [WorldClim 2.1](https://www.worldclim.org/data/worldclim21.html).
 2. En la sección de [variables bioclimáticas](https://www.worldclim.org/data/bioclim.html), descargar el archivo de resolución **2.5 minutos** (~4.5 km).
 3. Descomprimir el `.zip`. Contiene 19 archivos GeoTIFF (`.tif`), uno por cada variable bioclimática (BIO1–BIO19).
@@ -101,4 +107,4 @@ Estos cinco archivos CSV son la entrada de registros para Maxent.
 
 - Las capas de WorldClim representan el clima promedio del periodo 1970–2000. El filtro de 1980–2020 mantiene los registros en un periodo compatible y coincide con el fin del muestreo del estudio de antecedente.
 - El nicho climático se estima con clima promedio de largo plazo, por lo que los registros no se emparejan año por año con las capas.
-- **Limitación:** los registros posteriores a 2000 quedan fuera del periodo que cubren las capas climáticas.
+- *Limitación:* los registros posteriores a 2000 quedan fuera del periodo que cubren las capas climáticas.
