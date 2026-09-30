@@ -1,130 +1,497 @@
-# Objetivo 2 · Selección de variables bioclimáticas no correlacionadas
+# Objetivo 2 - Selección de variables bioclimáticas no correlacionadas
 
-Guía para preparar las capas climáticas y elegir un subconjunto de variables no correlacionadas. Se divide en dos partes:
+Los modelos de nicho (objetivos 3 a 5) describen el nicho climático de cada especie a partir de variables bioclimáticas. WorldClim ofrece 19, pero muchas miden casi lo mismo: por ejemplo, la temperatura media anual (BIO1) y la temperatura media del trimestre más cálido (BIO10) suelen variar juntas. Si se usan variables muy correlacionadas puede que el modelo le dé el doble peso a una misma dimensión del clima (**multicolinealidad**), los resultados se vuelven difíciles de interpretar, porque no se sabe qué variable explica el patrón además, aumenta el riesgo de sobreajuste.
 
-- **1. (QGIS):** descargar, recortar a México y convertir las capas al formato de Maxent.
-- **2. (R):** correlación de Spearman y PCA, siguiendo el manual
-  *Ejercicios sobre Análisis Estadístico en R* del curso (`scripts/02_variables_correlacion_pca.R`).
+Este objetivo reduce las 19 variables a un subconjunto pequeño y **no redundante**, que represente las principales dimensiones del clima de México.
 
-**Entrada:** los 5 archivos de presencias del objetivo 1 (`data/processed/*.csv`).
-**Salida:** 19 capas `.asc` de México y una lista de variables seleccionadas.
+```ELIMINAR ESTO 
+## Flujo de trabajo
+
+| Paso | Qué se hace | Dónde | Origen en el curso |
+|---|---|---|---|
+| 0 | Preparar R | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
+| 1 | Descargar WorldClim | Navegador | Práctica de GBIF y Maxent (Q) |
+| 2 | Crear la máscara de México | QGIS | Mismo flujo del objetivo 1 |
+| 3 | Cargar las capas | R | Práctica 1, *Espacio geográfico y espacio ecológico* (V) |
+| 4 | Recortar a México | R | Práctica 1 (V) |
+| 5 | Extraer valores y muestrear 10,000 celdas | R | Práctica 1 (V) |
+| 6 | Escalar las variables | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
+| 7 | Correlación de Spearman | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
+| 8 | Análisis de Componentes Principales (PCA) | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
+| 9 | Selección final de variables | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
+```
+
+A continuación se explican los pasos necesarios para el cumplimiento del objetivo:
+
+## Paso 0 - Preparar el ambiente de Rstudio
+
+### 0.1 Instalar y cargar paquetes
+
+`require()` revisa si el paquete ya está instalado; si no lo está, `install.packages()` lo instala.
+
+```r
+if (!require("terra")) install.packages("terra")            # Capas raster y vectoriales
+if (!require("ggplot2")) install.packages("ggplot2")        # Gráficas
+if (!require("reshape2")) install.packages("reshape2")      # melt() para el heatmap
+if (!require("factoextra")) install.packages("factoextra")  # Visualización del PCA
+if (!require("psych")) install.packages("psych")            # Análisis de cargas
+```
+Después, `library()` lo carga en la sesión.
+
+```r
+library(terra)
+library(ggplot2)
+library(reshape2)
+library(factoextra)
+library(psych)
+```
+
+### 0.2 Directorio de trabajo*
+
+Todas las rutas de esta guía son **relativas a la carpeta raíz del repositorio***, hay que indicarle a R que trabaje desde ahí.
+
+```r
+getwd()   # muestra en qué carpeta está trabajando R
+
+setwd("C:/analisis_uma/03-analisis-uma-rstudio")   # cambiar por la ruta real; usar / y no \
+```
+
+*En RStudio también se puede hacer desde **Session --> Set Working Directory --> Choose Directory…**
+
+### 0.3 Carpetas de resultados
+
+```r
+dir.create("results/figures", recursive = TRUE, showWarnings = FALSE)
+dir.create("results/tables", recursive = TRUE, showWarnings = FALSE)
+```
+
+`recursive = TRUE` crea también `results/` si no existe; `showWarnings = FALSE` evita un aviso si
+las carpetas ya estaban creadas.
 
 ---
 
-## 1 · Preparación de capas en QGIS
+## Paso 1 - Descargar WorldClim
 
-### 1.1. Descargar WorldClim
+WorldClim 2.1 ofrece capas climáticas globales que resumen el clima promedio de **1970–2000**.
+Las 19 variables bioclimáticas (BIO) derivan de temperaturas y precipitaciones mensuales y
+representan tendencias anuales, estacionalidad y condiciones extremas (ver la tabla al final).
 
-1. [worldclim.org](https://www.worldclim.org) → **Data** → **Historical climate data** (WorldClim 2.1).
-2. Fila **bio** (19 variables bioclimáticas) → resolución **2.5 minutes** (~4.5 km, ~600 MB).
-   Con buena conexión puede usarse 30 s (~1 km, ~10 GB).
-3. Descomprimir en `data/climate/worldclim/`. Se obtienen `wc2.1_2.5m_bio_1.tif` … `bio_19.tif`.
+1. [worldclim.org](https://www.worldclim.org) → **Data** → **Historical climate data**.
+2. Fila **bio** → resolución **2.5 minutes** (~4.5 km por celda), la misma que se usó en la
+   Práctica 1. Es adecuada para describir el clima a escala nacional y el archivo pesa ~600 MB.
+3. Descomprimir en `data/climate/wc2.1_2.5m/`. Se obtienen 19 archivos:
+   `wc2.1_2.5m_bio_1.tif` … `wc2.1_2.5m_bio_19.tif`.
 
-Periodo climático: promedio 1970–2000.
+## Paso 2 - Crear la máscara de México (QGIS)
 
-### 1.2. Crear la máscara de México
+El análisis se limita a México, igual que los registros de presencia (objetivo 1). Para recortar
+las capas se necesita un polígono del país.
 
-1. Cargar **World Map** (escribir `world` en el recuadro **Coordenada** y presionar Enter).
-2. Herramienta **Seleccionar objetos espaciales** → clic sobre México.
+1. Cargar la capa **World Map**: escribir `world` en el recuadro **Coordenada** (barra inferior)
+   y presionar Enter.
+2. Con la herramienta **Seleccionar objetos espaciales**, dar clic sobre México.
 3. Clic derecho en la capa → **Exportar → Guardar objetos seleccionados como…**
-   → ESRI Shapefile · `data/climate/mexico.shp` · EPSG:4326.
+   → formato ESRI Shapefile · archivo `data/climate/mexico.shp` · SRC EPSG:4326.
 
-### 1.3. Recortar las 19 capas a México
+## Paso 3 - Cargar las capas en R
 
-1. **Ráster → Extracción → Cortar ráster por capa de máscara**.
-2. Clic en **Ejecutar como proceso por lotes** (abajo a la izquierda).
-3. Agregar las 19 capas como entrada, `mexico.shp` como máscara y marcar
-   **Ajustar la extensión del ráster recortado a la de la capa de máscara**.
-4. Salidas: `data/climate/recortes/bio_1.tif` … `bio_19.tif`.
+### 3.1 Listar los archivos
 
-### 1.4. Convertir a formato ASCII (.asc) para Maxent
+`list.files()` busca en la carpeta todos los archivos que terminan en `.tif`.
+`full.names = TRUE` devuelve la ruta completa de cada uno, necesaria para leerlos.
 
-1. **Ráster → Conversión → Traducir (convertir formato)**, también en **proceso por lotes**.
-2. Entrada: los 19 recortes. Salida: `data/climate/asc/bio_1.asc` … `bio_19.asc`.
+```r
+bios <- list.files(
+  path = "../00-data-worldclim",
+  pattern = "\\.tif$",
+  full.names = TRUE
+)
 
-Maxent exige que todas las capas tengan **la misma extensión, resolución y nombre sin espacios**.
-Como todas vienen de la misma fuente y la misma máscara, esto se cumple.
+bios
+```
+
+**Qué debe salir:** 19 rutas. El orden es alfabético (`bio_1`, `bio_10`, `bio_11`… `bio_2`…); no
+afecta el análisis porque cada capa conserva su nombre.
+
+### 3.2 Leer las capas
+
+`rast()` lee los 19 archivos y los junta en un solo objeto de 19 capas, una por variable.
+
+```r
+bios <- rast(bios)
+
+bios
+```
+
+**Qué debe salir:** un resumen con `dimensions` (`nlyr = 19`), `resolution` (~0.0417 grados =
+2.5 min), `extent` (todo el mundo) y `coord. ref.` (WGS 84).
+
+### 3.3 Acortar los nombres
+
+`sub()` reemplaza el texto `wc2.1_2.5m_bio_` por `BIO`, para que en tablas y gráficas se lea
+`BIO1`, `BIO2`, etc.
+
+```r
+names(bios) <- sub("wc2.1_2.5m_bio_", "BIO", names(bios))
+
+names(bios)
+```
+
+**Qué debe salir:** `"BIO1" "BIO10" "BIO11" ... "BIO9"`.
 
 ---
 
-## 2 · Correlación y PCA en R
+## Paso 4 - Recortar a México
 
-Ejecutar `scripts/02_variables_correlacion_pca.R` desde la carpeta raíz del repositorio.
-El script hace lo siguiente:
+Las capas cubren todo el mundo, pero el área de estudio es México. Se recortan en dos pasos, como
+en la Práctica 1 se recortó por bioma:
 
-| Paso | Qué hace | Salida |
-|---|---|---|
-| 1 | Une las presencias de las 5 especies y extrae el valor de las 19 capas en cada punto | `data/processed/valores_climaticos_puntos.csv` |
-| 2 | Escala las variables y calcula la correlación de Spearman | `results/figures/02_heatmap_spearman.png` |
-| 3 | Lista los pares con correlación alta (\|ρ\| > 0.8) | `results/tables/02_pares_correlacionados.csv` |
-| 4 | PCA: varianza explicada, biplot y cargas | `results/figures/02_pca_*.png`, `results/tables/02_cargas_pca.csv` |
-| 5 | Guarda la lista final de variables elegidas | `results/tables/02_variables_seleccionadas.csv` |
+- `crop()` reduce las capas al **rectángulo** que contiene a México (menos celdas, cálculos más rápidos).
+- `mask()` deja **sin valor (NA)** las celdas de ese rectángulo que quedan fuera del polígono
+  (mar, EE. UU., Centroamérica).
 
-Se usan las presencias de **las cinco especies juntas** para que todas compartan el mismo conjunto
-de variables; esto es necesario para comparar sus nichos en los objetivos 4 y 5.
+```r
+mexico <- vect("../00-data-map-mex/mexico.shp")
 
-### 2.1 Criterios de selección
+bios_mx <- mask(
+  crop(bios, mexico),
+  mexico
+)
 
-1. De cada par con **|ρ| > 0.8**, conservar solo una variable.
-2. Para decidir cuál, preferir la que tenga **cargas altas en el PCA** (> 0.3 en los primeros
-   componentes, como en el manual) y mayor **sentido biológico** para mamíferos de zona semiárida
-   (p. ej. estacionalidad, extremos de temperatura, precipitación en la temporada seca).
-3. Buscar un conjunto final que combine variables de **temperatura** y de **precipitación**.
-4. Opcional: excluir BIO8, BIO9, BIO18 y BIO19, que combinan temperatura y precipitación por
-   trimestres y pueden mostrar discontinuidades espaciales artificiales.
+plot(bios_mx[["BIO1"]])
+plot(mexico, add = TRUE)
+```
 
-La selección final es una decisión documentada: se escribe a mano en el paso 5 del script.
+`vect()` lee el shapefile. Las dos últimas líneas grafican la temperatura media anual (BIO1) con el
+contorno de México encima.
 
-### 2.2 Variables bioclimáticas
+**Qué debe salir:** un mapa de México coloreado por temperatura, sin valores fuera del país.
 
-| Variable | Descripción | Tipo |
-|---|---|---|
-| BIO1 | Temperatura media anual | T |
-| BIO2 | Rango medio diurno de temperatura | T |
-| BIO3 | Isotermalidad (BIO2/BIO7 × 100) | T |
-| BIO4 | Estacionalidad de la temperatura | T |
-| BIO5 | Temperatura máxima del mes más cálido | T |
-| BIO6 | Temperatura mínima del mes más frío | T |
-| BIO7 | Rango anual de temperatura (BIO5 − BIO6) | T |
-| BIO8 | Temperatura media del trimestre más húmedo | T/P |
-| BIO9 | Temperatura media del trimestre más seco | T/P |
-| BIO10 | Temperatura media del trimestre más cálido | T |
-| BIO11 | Temperatura media del trimestre más frío | T |
-| BIO12 | Precipitación anual | P |
-| BIO13 | Precipitación del mes más húmedo | P |
-| BIO14 | Precipitación del mes más seco | P |
-| BIO15 | Estacionalidad de la precipitación | P |
-| BIO16 | Precipitación del trimestre más húmedo | P |
-| BIO17 | Precipitación del trimestre más seco | P |
-| BIO18 | Precipitación del trimestre más cálido | P/T |
-| BIO19 | Precipitación del trimestre más frío | P/T |
+---
 
-### 2.3 Registro de resultados
+## Paso 5 - Extraer valores y muestrear 10,000 celdas
 
-| Variables iniciales | Pares con \|ρ\| > 0.8 | Variables seleccionadas | Varianza explicada por PC1 + PC2 |
+### 5.1 Convertir las capas en tabla
+
+Para calcular correlaciones, R necesita una tabla: una **fila por celda** y una **columna por
+variable**. `as.data.frame()` hace esa conversión.
+
+- `xy = TRUE` agrega las coordenadas de cada celda (columnas `x` y `y`).
+- `na.rm = TRUE` descarta las celdas sin valor (las que quedaron fuera de México).
+
+```r
+bios_mx_extract <- as.data.frame(
+  bios_mx,
+  xy = TRUE,
+  na.rm = TRUE
+)
+
+dim(bios_mx_extract)
+```
+
+**Qué debe salir:** varias centenas de miles de filas y 21 columnas (`x`, `y` y las 19 variables).
+
+### 5.2 Tomar una muestra aleatoria
+
+Trabajar con todas las celdas hace lento el análisis sin cambiar el resultado. Se toma una muestra
+aleatoria de **10,000 celdas** con la función `sample_df()` de la Práctica 1: si la tabla tiene
+menos de 10,000 filas la deja igual; si tiene más, elige 10,000 al azar.
+
+`set.seed(123)` fija el punto de partida del generador aleatorio, para que la muestra sea **siempre
+la misma** cada vez que se corre el código (reproducibilidad).
+
+```r
+set.seed(123)
+
+sample_df <- function(x, n = 10000) {
+  if (nrow(x) <= n) {
+    return(x)
+  }
+  x[sample(nrow(x), n), ]
+}
+
+clima <- sample_df(bios_mx_extract)
+
+dim(clima)
+```
+
+**Qué debe salir:** `10000 21`.
+
+> **¿Por qué celdas de todo México y no los puntos de las especies?** La correlación entre
+> variables describe cómo se relacionan en el territorio de estudio. Usar el mismo conjunto de
+> celdas para todas garantiza que las cinco especies compartan las mismas variables, requisito para
+> comparar sus nichos en los objetivos 4 y 5.
+
+---
+
+## Paso 6 - Seleccionar y escalar las variables
+
+Primero se separan las 19 variables bioclimáticas de las coordenadas (`x`, `y`), que no son
+variables ambientales. Se seleccionan **por nombre** y no por posición, para evitar incluir una
+columna equivocada.
+
+Después, `scale()` transforma cada variable a **valores Z** (media 0 y desviación estándar 1).
+Es necesario porque las variables tienen unidades y rangos muy distintos: la temperatura está en °C
+(decenas) y la precipitación en mm (cientos o miles). Sin escalar, las variables con números más
+grandes dominarían el PCA.
+
+```r
+clima_variables <- clima[, names(bios)]
+
+clima_variables <- scale(clima_variables)
+```
+
+---
+
+## Paso 7 - Correlación de Spearman
+
+### 7.1 Matriz de correlación
+
+La correlación de **Spearman** se basa en rangos: mide si dos variables aumentan o disminuyen
+juntas, **sin asumir una relación lineal ni normalidad** en los datos. Va de −1 (relación inversa
+perfecta) a 1 (relación directa perfecta); 0 indica que no hay relación.
+
+```r
+cor_clima <- cor(clima_variables, method = "spearman")
+
+cor_clima_2dec <- round(cor_clima, 2)
+
+write.csv(cor_clima_2dec, "results/tables/02_matriz_spearman.csv")
+```
+
+`round(..., 2)` redondea a dos decimales para facilitar la lectura. La matriz se guarda como tabla.
+
+### 7.2 Preparar la matriz para el heatmap
+
+La matriz es **simétrica** (la correlación BIO1–BIO12 es igual a BIO12–BIO1), así que basta con
+graficar la mitad. `get_upper_tri()` convierte en `NA` el triángulo inferior.
+
+```r
+get_upper_tri <- function(cor_clima_2dec) {
+  cor_clima_2dec[lower.tri(cor_clima_2dec)] <- NA
+  return(cor_clima_2dec)
+}
+```
+
+`reorder_cor_clima()` reordena las variables con un **agrupamiento jerárquico** (`hclust()`), para
+que en el heatmap aparezcan juntas las variables relacionadas y se vean como **bloques**, en lugar
+del orden arbitrario original.
+
+`hclust()` necesita distancias, no correlaciones. La transformación `(1 − correlación) / 2`
+convierte una correlación de 1 en distancia 0 (variables "iguales"), una de 0 en distancia 0.5 y
+una de −1 en distancia 1 (máxima distancia).
+
+```r
+reorder_cor_clima <- function(cor_clima_2dec) {
+  dd <- as.dist((1 - cor_clima_2dec) / 2)
+  hc <- hclust(dd)
+  cor_clima_2dec <- cor_clima_2dec[hc$order, hc$order]
+  return(cor_clima_2dec)
+}
+
+cor_clima_2dec <- reorder_cor_clima(cor_clima_2dec)
+
+upper_tri <- get_upper_tri(cor_clima_2dec)
+```
+
+### 7.3 Graficar el heatmap
+
+`melt()` convierte la matriz en una tabla larga (una fila por par de variables), el formato que
+necesita `ggplot()`. `na.rm = TRUE` elimina las celdas vacías del triángulo inferior.
+
+```r
+melted_tri_cor_clima <- melt(upper_tri, na.rm = TRUE)
+
+ggheatmap <- ggplot(data = melted_tri_cor_clima, aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "#f7f7f7") +
+  scale_fill_gradient2(low = "#6baed6", mid = "white", high = "#084594",
+                       midpoint = 0, limits = c(-1, 1),
+                       space = "Lab",
+                       name = "Spearman\nCorrelation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1)) +
+  coord_fixed()
+
+print(ggheatmap)
+
+ggsave("results/figures/02_heatmap_spearman.png", plot = ggheatmap,
+       width = 8, height = 6, dpi = 300)
+```
+
+**Cómo leerlo:** los cuadros azul oscuro indican correlación positiva fuerte y los azul claro,
+negativa; los blancos, sin relación. Los **bloques oscuros** son grupos de variables redundantes.
+
+**Salidas:** `results/figures/02_heatmap_spearman.png` y `results/tables/02_matriz_spearman.csv`.
+
+---
+
+## Paso 8 - Análisis de Componentes Principales (PCA)
+
+El PCA transforma las 19 variables correlacionadas en nuevas variables **independientes** entre sí,
+llamadas componentes principales (PC1, PC2…). PC1 resume la mayor parte de la variación del clima,
+PC2 la siguiente mayor parte, y así sucesivamente. Sirve para ver qué variables comparten
+información y cuáles aportan algo distinto.
+
+### 8.1 Calcular el PCA
+
+- `center = TRUE` resta la media de cada variable, para que todas queden centradas en 0.
+- `scale. = TRUE` divide entre la desviación estándar, para que todas tengan varianza 1.
+
+```r
+pca_result <- prcomp(clima_variables, center = TRUE, scale. = TRUE)
+
+summary(pca_result)
+```
+
+**Qué debe salir:** una tabla con la desviación estándar, la proporción de varianza y la proporción
+acumulada de cada componente. Anotar cuánta varianza explican PC1 y PC2 juntos.
+
+### 8.2 Scree plot
+
+Muestra el **porcentaje de varianza** explicado por cada componente. Ayuda a decidir cuántos
+componentes vale la pena interpretar: normalmente los que están antes de que la curva se aplane.
+
+```r
+screen_plot <- fviz_eig(pca_result, addlabels = TRUE, ylim = c(0, 50))
+
+print(screen_plot)
+
+ggsave("results/figures/02_screen_plot.png", plot = screen_plot,
+       width = 8, height = 6, dpi = 300)
+```
+
+### 8.3 Biplot
+
+Muestra las celdas como puntos y las variables como **flechas** sobre PC1 y PC2:
+
+- flechas que apuntan en la **misma dirección** → variables correlacionadas (redundantes),
+- flechas **opuestas** → correlación negativa,
+- flechas **perpendiculares** → variables independientes,
+- flechas **largas** → variables que aportan mucho a esos dos componentes.
+
+```r
+biplot <- fviz_pca_biplot(pca_result, repel = TRUE, label = "var",
+                          col.var = "#084594",
+                          col.ind = "#6baed6")
+
+print(biplot)
+
+ggsave("results/figures/02_biplot.png", plot = biplot,
+       width = 8, height = 6, dpi = 300)
+```
+
+`label = "var"` muestra solo el nombre de las variables; con 10,000 celdas, las etiquetas de los
+puntos taparían la gráfica.
+
+### 8.4 Cargas de las variables
+
+Las **cargas** indican cuánto contribuye cada variable a cada componente (de −1 a 1). Una carga
+alta en valor absoluto significa que esa variable pesa mucho en ese componente.
+
+```r
+pca_loadings <- data.frame(pca_result$rotation)
+
+print(round(pca_loadings[, 1:4], 2))
+
+write.csv(round(pca_loadings, 3), "results/tables/02_cargas_pca.csv")
+```
+
+### 8.5 Variables importantes por componente
+
+Se marcan como "importantes" las variables con carga mayor a **0.3** (en valor absoluto) en cada
+componente. Se muestran los primeros cuatro componentes.
+
+```r
+pca_importance <- apply(abs(pca_result$rotation), 2, function(x) which(x > 0.3))
+
+print(pca_importance[1:4])
+```
+
+**Salidas:** `results/figures/02_screen_plot.png`, `results/figures/02_biplot.png` y
+`results/tables/02_cargas_pca.csv`.
+
+---
+
+## Paso 9 - Selección final de variables
+
+Igual que en el ejercicio de clase, se eligen variables que representen **grupos no redundantes**
+según la correlación y el PCA.
+
+### Criterios
+
+1. En el heatmap, identificar los **bloques** de variables muy correlacionadas entre sí
+   (como referencia, |ρ| > 0.8).
+2. Elegir **una variable por bloque**, preferentemente la que tenga mayor carga en los primeros
+   componentes del PCA.
+3. Procurar que el conjunto final combine variables de **temperatura** y de **precipitación**, y de
+   ser posible alguna de **estacionalidad**.
+4. Preferir variables con sentido biológico claro para mamíferos de zonas semiáridas (por ejemplo,
+   extremos de temperatura o precipitación de la temporada seca).
+
+### Código
+
+Escribir en `variables_seleccionadas` las variables elegidas y revisar que no queden pares con
+correlación alta entre sí.
+
+```r
+variables_seleccionadas <- c()  # <- completar, por ejemplo c("BIO1", "BIO4", "BIO12", "BIO15")
+
+round(cor_clima[variables_seleccionadas, variables_seleccionadas], 2)
+
+write.csv(data.frame(variable = variables_seleccionadas),
+          "results/tables/02_variables_seleccionadas.csv", row.names = FALSE)
+```
+
+**Salida:** `results/tables/02_variables_seleccionadas.csv`, que se usará en los objetivos 3 a 5.
+
+### Registro de resultados
+
+| Variables iniciales | Varianza explicada por PC1 + PC2 | Variables seleccionadas | Justificación |
 |---|---|---|---|
 | 19 | | | |
 
 ---
 
-## 2.4 Estructura resultante
+## Variables bioclimáticas
+
+| Variable | Descripción | Tipo |
+|---|---|---|
+| BIO1 | Temperatura media anual | Temperatura |
+| BIO2 | Rango diurno medio | Temperatura |
+| BIO3 | Isotermalidad (BIO2/BIO7 × 100) | Temperatura |
+| BIO4 | Estacionalidad de la temperatura | Temperatura |
+| BIO5 | Temperatura máxima del mes más cálido | Temperatura |
+| BIO6 | Temperatura mínima del mes más frío | Temperatura |
+| BIO7 | Rango de temperatura anual (BIO5 − BIO6) | Temperatura |
+| BIO8 | Temperatura media del trimestre más húmedo | Temperatura |
+| BIO9 | Temperatura media del trimestre más seco | Temperatura |
+| BIO10 | Temperatura media del trimestre más cálido | Temperatura |
+| BIO11 | Temperatura media del trimestre más frío | Temperatura |
+| BIO12 | Precipitación anual | Precipitación |
+| BIO13 | Precipitación del mes más lluvioso | Precipitación |
+| BIO14 | Precipitación del mes más seco | Precipitación |
+| BIO15 | Estacionalidad de la precipitación | Precipitación |
+| BIO16 | Precipitación del trimestre más húmedo | Precipitación |
+| BIO17 | Precipitación del trimestre más seco | Precipitación |
+| BIO18 | Precipitación del trimestre más cálido | Precipitación |
+| BIO19 | Precipitación del trimestre más frío | Precipitación |
+
+## Estructura resultante
 
 ```
-data/climate/
-├── worldclim/        # 19 .tif originales (no se suben a GitHub por su tamaño)
-├── mexico.shp        # máscara de México
-├── recortes/         # 19 .tif recortados
-└── asc/              # 19 .asc para Maxent
-data/processed/
-└── valores_climaticos_puntos.csv
-results/
-├── figures/02_*.png
-└── tables/02_*.csv
+00-data-worldclim/            # 19 .tif de WorldClim (no se suben a GitHub por su tamaño)
+00-data-map-mex/mexico.shp    # máscara de México
+03-analisis-uma-rstudio/results/
+├── figures/                  # 02_heatmap_spearman.png · 02_screen_plot.png · 02_biplot.png
+└── tables/                   # 02_matriz_spearman.csv · 02_cargas_pca.csv · 02_variables_seleccionadas.csv
 ```
 
-## Notas de limitaciones
+## Limitaciones
 
-- La correlación se calcula sobre los puntos de presencia, no sobre todo el territorio; refleja
-  las condiciones donde se registraron las especies.
-- La resolución de 2.5 min (~4.5 km) es más gruesa que la UMA; es adecuada para describir el nicho
-  a escala nacional, no para variaciones dentro de la UMA.
+- **Resolución:** 2.5 min (~4.5 km) describe el clima a escala nacional; es más gruesa que la UMA.
+- **Periodo climático:** WorldClim resume 1970–2000, mientras que los registros de presencia van de
+  1980 a 2020 (ver objetivo 1).
+- **Muestreo:** la correlación se calcula con 10,000 celdas y no con todas; `set.seed(123)` asegura
+  que la muestra sea siempre la misma.
+- **Selección:** la elección final combina criterios estadísticos y biológicos, por lo que se
+  documenta su justificación en el registro de resultados.
