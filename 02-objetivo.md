@@ -73,14 +73,30 @@ Las 19 capas bioclimáticas de WorldClim 2.1 (2.5 min, promedio 1970–2000) se 
  
 Antes de continuar, verificar que la carpeta contenga los 19 archivos `.tif` sueltos (`wc2.1_2.5m_bio_1.tif` … `wc2.1_2.5m_bio_19.tif`), sin subcarpetas.
 
-## Paso 2 - Crear la máscara de México (QGIS)
+## Paso 2 - Crear la máscara de México (CONABIO)
 
-El análisis se limita a México, igual que los registros de presencia (objetivo 1). Para recortar las capas se necesita un polígono del país.
+El análisis se limita a México, igual que los registros de presencia (objetivo 1). Para recortar las capas climáticas se necesita un polígono del país. Se usa la capa oficial
+**División política estatal 1:1,000,000** del Geoportal de CONABIO (`destdv1gw`).
 
-1. Cargar la capa **World Map**: escribir `world` en el recuadro **Coordenada** (barra inferior) y presionar `Enter`.
-2. Con la herramienta **Seleccionar objetos espaciales**, dar clic sobre México.
-3. Clic derecho en la capa → **Exportar → Guardar objetos seleccionados como…**
-   → formato ESRI Shapefile · archivo `data/climate/mexico.shp` · SRC EPSG:4326.
+1. Entrar a la ficha de la capa en el
+   [Geoportal de CONABIO](http://geoportal.conabio.gob.mx/metadatos/doc/html/destdv1gw.html)
+   y descargarla en formato shapefile.
+2. Descomprimir y guardar **todos** los archivos en `00-data-map-mex/`, sin cambiarles el nombre.
+   El shapefile necesita estos cuatro juntos para abrir:
+   | Archivo | Contenido |
+   |---|---|
+   | `destdv1gw.shp` | Geometría (los polígonos) |
+   | `destdv1gw.shx` | Índice de la geometría |
+   | `destdv1gw.dbf` | Tabla de atributos (nombre de cada estado) |
+   | `destdv1gw.prj` | Sistema de coordenadas |
+   También vienen los metadatos (`.html`, `.xml`) y dos imágenes de vista previa (`.png`).
+3. Copiar la **cita** de la capa que aparece en el metadato (`destdv1gw.html`) para la sección de
+   referencias.
+¿Por qué esta capa?
+ 
+- Es la división política oficial de México, con más detalle en costas y fronteras que una capa mundial.
+- Está en **coordenadas geográficas WGS 84** (el sufijo `gw` lo indica), el mismo sistema que
+  WorldClim, por lo que no hay que reproyectarla.
 
 ## Paso 3 - Cargar las capas en Rstudio
 
@@ -95,11 +111,11 @@ bios <- list.files(
   pattern = "\\.tif$",
   full.names = TRUE
 )
-
+ 
 bios
 ```
 
-**Qué debe salir:** 19 rutas. El orden es alfabético (`bio_1`, `bio_10`, `bio_11`… `bio_2`…); no afecta el análisis porque cada capa conserva su nombre.
+**Qué debe salir:** 19 rutas. El orden es alfabético (`bio_1`, `bio_10`, `bio_11`… `bio_2`); no afecta el análisis porque cada capa conserva su nombre.
 
 ### 3.2 Leer las capas
 
@@ -127,27 +143,34 @@ names(bios)
 
 ## Paso 4 - Recortar a México
 
-Las capas cubren todo el mundo, pero el área de estudio es México. Se recortan en dos pasos, como
-en la Práctica 1 se recortó por bioma:
-
+Las capas cubren todo el mundo, pero el área de estudio es México. Se recortan en dos pasos, como en la Práctica 1 se recortó por bioma:
+ 
 - `crop()` reduce las capas al **rectángulo** que contiene a México (menos celdas, cálculos más rápidos).
 - `mask()` deja **sin valor (NA)** las celdas de ese rectángulo que quedan fuera del polígono
   (mar, EE. UU., Centroamérica).
 
 ```r
-mexico <- vect("../00-data-map-mex/mexico.shp")
-
+mexico <- vect("../00-data-map-mex/destdv1gw.shp")
+ 
+nrow(mexico)   # número de polígonos (un estado por fila)
+plot(mexico)   # revisar que se vea la República completa
+ 
 bios_mx <- mask(
   crop(bios, mexico),
   mexico
 )
-
+ 
 plot(bios_mx[["BIO1"]])
 plot(mexico, add = TRUE)
 ```
-
-`vect()` lee el shapefile. Las dos últimas líneas grafican la temperatura media anual (BIO1) con el contorno de México encima.
-
+ 
+`vect()` lee el shapefile. La capa tiene **un polígono por estado**, por eso `nrow(mexico)` da
+alrededor de 32 (puede ser algo más si algunas islas vienen como polígonos separados); `plot(mexico)`
+permite revisar que se vea la República completa. No es necesario unir los estados: `mask()` usa
+todos los polígonos juntos, así que el recorte equivale al contorno del país.
+ 
+Las dos últimas líneas grafican la temperatura media anual (BIO1) con la división estatal encima.
+ 
 **Qué debe salir:** un mapa de México coloreado por temperatura, sin valores fuera del país.
 
 ## Paso 5 - Extraer valores y muestrear 10,000 celdas
