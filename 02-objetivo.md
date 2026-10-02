@@ -4,7 +4,7 @@ Los modelos de nicho (objetivos 3 a 5) describen el nicho climático de cada esp
 
 Este objetivo reduce las 19 variables a un subconjunto pequeño y **no redundante**, que represente las principales dimensiones del clima de México.
 
-```ELIMINAR ESTO 
+```
 ## Flujo de trabajo
 
 | Paso | Qué se hace | Dónde | Origen en el curso |
@@ -161,7 +161,7 @@ names(bios)
 
 **Resultado** 
 
-BIO1"  "BIO10" "BIO11" "BIO12" "BIO13" "BIO14" "BIO15" "BIO16" "BIO17" "BIO18" "BIO19" "BIO2"  "BIO3"  "BIO4"  "BIO5" "BIO6"  "BIO7"  "BIO8"  "BIO9"
+"BIO1"  "BIO10" "BIO11" "BIO12" "BIO13" "BIO14" "BIO15" "BIO16" "BIO17" "BIO18" "BIO19" "BIO2"  "BIO3"  "BIO4"  "BIO5" "BIO6"  "BIO7"  "BIO8"  "BIO9"
 
 ## Paso 4 - Recortar a México
 
@@ -259,7 +259,7 @@ clima_variables <- scale(clima_variables)
 
 ## Paso 7 - Correlación de Spearman
 
-7.1 Matriz de correlación
+### 7.1 Matriz de correlación
 
 La correlación de **Spearman** se basa en rangos: mide si dos variables aumentan o disminuyen juntas, **sin asumir una relación lineal ni normalidad** en los datos. Va de −1 (relación inversa perfecta) a 1 (relación directa perfecta); 0 indica que no hay relación.
 
@@ -485,7 +485,7 @@ print(pca_importance[1:4])
 
 **Resultado**
 
-| PC | Variables con |carga| > 0.3 |
+| PC | Variables con carga > 0.3 (valor absoluto) |
 |---|---|
 | PC1 | BIO12, BIO6 |
 | PC2 | BIO1, BIO10, BIO5, BIO8 |
