@@ -66,7 +66,7 @@ dir.create("results/figures", recursive = TRUE, showWarnings = FALSE)
 dir.create("results/tables", recursive = TRUE, showWarnings = FALSE)
 ```
 
-`recursive = TRUE` crea también `results/` si no existe; `showWarnings = FALSE` evita un aviso silas carpetas ya estaban creadas.
+`recursive = TRUE` crea también `results/` si no existe; `showWarnings = FALSE` evita un aviso si las carpetas ya estaban creadas.
 
 ## Paso 1 - Verificar las capas WorldClim
 
