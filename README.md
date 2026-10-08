@@ -36,7 +36,7 @@ Como objetivos especificos se pretende:
 
 5. Comparar el traslape de nicho climático entre el venado y sus depredadores con el traslape temporal (Dhat1) reportado. --> V (lectura de amplitud y posicion de nicho)
    
-6. Generar un repositorio que documente el flujo de trabajo y de desiciones para llegar a responder a la pregunta de ivestigación --> MA
+6. Generar un repositorio que documente el flujo de trabajo y de desiciones para llegar a responder a la pregunta de investigación --> MA
 
 *como idea guía es: que este proyecto pueda ayudar a comprender el punto ecológico al comparar la detección de mamiferos por ambos metodos de muestreo/monitoreo y ver si este script se puede reutilizar con datos que obtenga en un futuro.
 
