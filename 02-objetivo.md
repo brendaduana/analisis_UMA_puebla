@@ -509,6 +509,19 @@ Igual que en el ejercicio de clase, se eligen variables que representen **grupos
 3. Procurar que el conjunto final combine variables de **temperatura** y de **precipitación**, y de ser posible alguna de **estacionalidad**.
 4. Preferir variables con sentido biológico claro para mamíferos de zonas semiáridas (por ejemplo, extremos de temperatura o precipitación de la temporada seca).
 
+**Código**
+
+Se escriben en `variables_seleccionadas` las variables elegidas en los pasos anteriores y se revisa que no queden pares con correlación alta entre sí.
+
+```r
+variables_seleccionadas <- c("BIO5", "BIO6", "BIO12", "BIO15", "BIO17")
+
+round(cor_clima[variables_seleccionadas, variables_seleccionadas], 2)
+
+write.csv(data.frame(variable = variables_seleccionadas),
+          "results/tables/02_variables_seleccionadas.csv", row.names = FALSE)
+```
+
 **Resultado**
 
 A partir de las cargas del PCA (Paso 8.4–8.5), se preseleccionó una variable por cada uno de los 4 componentes interpretados: BIO6 y BIO12 (PC1), BIO5 (PC2), BIO17 (PC3) y BIO15 (PC4). La matriz de correlación de Spearman entre estas 5 variables fue:
@@ -540,7 +553,7 @@ Se excluyó deliberadamente el eje de **rango/estacionalidad térmica** (BIO4, B
 
 | Variables iniciales | Varianza explicada por PC1 + PC2 | Variables seleccionadas | Justificación |
 |---|---|---|---|
-| 19 | 69.80% | BIO5, BIO6, BIO12, BIO15, BIO17 | Una variable por bloque de correlación (Paso 7), con mayor carga en su componente del PCA (Paso 8.4–8.5); |ρ| ≤ 0.58 entre todas las seleccionadas (Paso 9); sentido fisiológico para mamíferos semiáridos (estrés térmico y disponibilidad hídrica) |
+| 19 | 69.80% | BIO5, BIO6, BIO12, BIO15, BIO17 | Una variable por bloque de correlación (Paso 7), con mayor carga en su componente del PCA (Paso 8.4–8.5); \|ρ\| ≤ 0.58 entre todas las seleccionadas (Paso 9); sentido fisiológico para mamíferos semiáridos (estrés térmico y disponibilidad hídrica) |
 
 ## Estructura resultante
 
