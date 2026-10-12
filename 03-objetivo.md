@@ -594,3 +594,125 @@ Las especies con mayor área idónea son las de AUC más bajo (*U. cinereoargent
 **Decisión**
 
 Entre el 56% y el 74% de México resulta idóneo para cada especie, así que el mapa binario discrimina poco, sobre todo en las especies generalistas. Por eso, en el Paso 6 la ubicación de la UMA se evalúa principalmente con la **idoneidad continua** y su **percentil** respecto a las presencias de cada especie; la clasificación binaria se reporta solo como complemento.
+
+## Paso 6 - Proyectar la UMA en el espacio geográfico
+
+Con los mapas del Paso 5 se evalúa qué tan idóneo es el clima de la UMA Santa Cruz Nuevo para cada especie, y cómo se compara con los sitios donde cada especie ha sido registrada en México.
+
+### 6.1 Ubicación de la UMA
+
+Las coordenadas se tomaron del área de estudio de Plata-Pérez et al. (2024): 18°17'44" N y 97°48'35" W, que en grados decimales son 18.2956 y −97.8097 (la longitud es negativa por estar al oeste).
+
+```r
+uma <- data.frame(
+  sitio = "UMA Santa Cruz Nuevo",
+  longitude = -97.8097,
+  latitude = 18.2956
+)
+
+uma_vect <- vect(uma, geom = c("longitude", "latitude"), crs = "EPSG:4326")
+
+uma_vect
+```
+
+- `uma` guarda las coordenadas en una tabla, con los mismos nombres de columna que las presencias (`longitude`, `latitude`).
+- `vect(...)` convierte la tabla en un punto con el sistema de coordenadas WGS 84, el mismo de los mapas.
+
+### 6.2 Idoneidad en la UMA
+
+```r
+idoneidad_uma <- unlist(extract(mapas, uma_vect)[, especies])
+binario_uma <- unlist(extract(binarios, uma_vect)[, especies])
+
+uma_buffer <- buffer(uma_vect, width = 5000)
+idoneidad_buffer <- unlist(extract(mapas, uma_buffer, fun = mean, na.rm = TRUE)[, especies])
+
+round(idoneidad_uma, 3)
+binario_uma
+round(idoneidad_buffer, 3)
+```
+
+- `extract(mapas, uma_vect)` obtiene la idoneidad de cada especie en la celda donde cae la UMA (~4.5 km de lado).
+- `extract(binarios, uma_vect)` indica si esa celda es idónea según el umbral p10.
+- `buffer(uma_vect, width = 5000)` crea un círculo de 5 km alrededor de la UMA, y `fun = mean` promedia la idoneidad de las celdas dentro de él. Así el resultado no depende de que el punto caiga justo en el borde de una celda.
+
+### 6.3 Percentil respecto a las presencias
+
+La idoneidad de 0 a 1 no es del todo comparable entre especies, porque cada modelo tiene su propia escala (por ejemplo, sus umbrales p10 van de 0.383 a 0.441). Para compararlas se calcula el **percentil**: el porcentaje de presencias de cada especie con una idoneidad igual o menor que la de la UMA.
+
+```r
+percentil_uma <- sapply(especies, function(sp) {
+  pts <- presencias_maxent[gsub(" ", "_", presencias_maxent$species) == sp,
+                           c("longitude", "latitude")]
+  idoneidad_pts <- extract(mapas[[sp]], as.matrix(pts))[[sp]]
+  mean(idoneidad_pts <= idoneidad_uma[sp], na.rm = TRUE) * 100
+})
+
+round(percentil_uma, 1)
+```
+
+- `gsub(" ", "_", ...)` convierte `Canis latrans` en `Canis_latrans`, para que coincida con el nombre del mapa.
+- `pts` toma los puntos de presencia de cada especie (Paso 2).
+- `extract(...)` obtiene la idoneidad del mapa en cada uno de esos puntos.
+- `mean(idoneidad_pts <= idoneidad_uma[sp]) * 100` calcula qué porcentaje de esos puntos tiene una idoneidad igual o menor que la de la UMA.
+
+Un percentil de 80 significa que la UMA es más idónea que el 80% de los sitios donde se ha registrado la especie (un sitio muy favorable); un percentil de 20, que es un sitio climáticamente marginal para ella.
+
+### 6.4 Tabla final
+
+Se junta todo en una tabla y se agrega la abundancia relativa publicada para la UMA (IAR; Plata-Pérez et al. 2024), solo como referencia.
+
+```r
+tabla_uma <- data.frame(
+  especie = especies,
+  idoneidad_uma = round(idoneidad_uma, 3),
+  idoneidad_buffer_5km = round(idoneidad_buffer, 3),
+  umbral_p10 = resumen_maxent$umbral_p10,
+  uma_idonea = ifelse(as.logical(binario_uma), "Si", "No"),
+  percentil_presencias = round(percentil_uma, 1)
+)
+
+iar <- data.frame(
+  especie = c("Urocyon_cinereoargenteus", "Odocoileus_virginianus",
+              "Canis_latrans", "Lynx_rufus", "Puma_concolor"),
+  IAR = c(23.85, 7.22, 3.44, 2.34, 0.14)
+)
+
+tabla_uma <- merge(tabla_uma, iar, by = "especie")
+tabla_uma <- tabla_uma[order(-tabla_uma$IAR), ]
+
+tabla_uma
+
+write.csv(tabla_uma, "results/tables/03_idoneidad_uma.csv", row.names = FALSE)
+```
+
+- `ifelse(...)` convierte `TRUE`/`FALSE` en "Si"/"No".
+- `merge(..., by = "especie")` une la tabla con el IAR por el nombre de la especie.
+- `order(-tabla_uma$IAR)` ordena de mayor a menor abundancia.
+
+**Resultado**
+
+| Especie | IAR (%) | Idoneidad (celda) | Idoneidad (5 km) | Umbral p10 | ¿Idónea? | Percentil |
+|---|---|---|---|---|---|---|
+| *U. cinereoargenteus* | 23.85 | 0.659 | 0.649 | 0.397 | Sí | 47.8 |
+| *O. virginianus* | 7.22 | 0.610 | 0.568 | 0.426 | Sí | 22.0 |
+| *C. latrans* | 3.44 | 0.616 | 0.612 | 0.416 | Sí | 35.0 |
+| *L. rufus* | 2.34 | 0.570 | 0.562 | 0.441 | Sí | 27.5 |
+| *P. concolor* | 0.14 | 0.530 | 0.504 | 0.383 | Sí | 15.8 |
+
+- La UMA es idónea para las cinco especies, como se esperaba, porque todas fueron registradas ahí por fototrampeo.
+- La idoneidad en la celda y en el radio de 5 km es casi igual (diferencias ≤ 0.04), así que el resultado no depende de la ubicación exacta del punto.
+- Todos los percentiles están por debajo de 50: para ninguna especie la UMA está entre sus sitios climáticamente más favorables.
+
+**Salida:** `results/tables/03_idoneidad_uma.csv`.
+
+**Decisión**
+
+Como entre el 56% y el 74% de México es idóneo para cada especie (Paso 5.3), que la UMA sea idónea dice poco por sí solo. La comparación entre especies se basa en el **percentil**.
+
+La UMA resulta un sitio climáticamente típico para *U. cinereoargenteus* (percentil 47.8), poco favorable para *C. latrans*, *L. rufus* y *O. virginianus* (22.0–35.0) y marginal para *P. concolor* (15.8). Que ningún percentil supere 50 es coherente con el carácter semiárido y de transición de la zona (selva baja caducifolia y matorral xerófilo), donde ninguna de las cinco especies tiene el centro de su nicho climático. La marcada estacionalidad de las lluvias en la UMA (Plata-Pérez et al. 2024) coincide además con la preferencia de *U. cinereoargenteus* por lluvia muy estacional (BIO15; Paso 3.3).
+
+De forma descriptiva, los extremos coinciden con la abundancia relativa publicada: la especie para la que la UMA es más típica (*U. cinereoargenteus*) es la más abundante, y aquella para la que es más marginal (*P. concolor*), la menos abundante. *O. virginianus* es la excepción: es la segunda especie más abundante aunque la UMA le resulta poco favorable climáticamente, lo que puede explicarse porque la UMA se maneja para el aprovechamiento del venado y su abundancia depende más del manejo que del clima.
+
+Esta comparación es solo exploratoria: con cinco especies no es posible una prueba estadística, y los modelos de *C. latrans* y *U. cinereoargenteus* discriminan poco (Paso 4.2). Los percentiles se retoman en el objetivo 4, que evalúa la posición de la UMA en el espacio ambiental.
+
