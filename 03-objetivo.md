@@ -308,16 +308,22 @@ En el reporte de una réplica individual (p. ej. `Puma_concolor_0.html`), el map
 
 | Especie | AUC de prueba (promedio ± DE) | Variable con mayor contribución | Curvas de respuesta |
 |---|---|---|---|
-| *C. latrans* | | | |
-| *L. rufus* | | | |
-| *O. virginianus* | | | |
-| *P. concolor* | | | |
-| *U. cinereoargenteus* | | | |
+| *C. latrans* | Baja con calor extremo (> ~30) | Alta entre ~0 y 10; baja con inviernos cálidos | Máxima con poca lluvia; disminuye al aumentar | Poca influencia | Máxima cerca de 0; baja al aumentar |
+| *L. rufus* | Alta hasta ~23; baja con más calor | Alta entre ~−3 y 10; casi cero por encima de ~11 | Máxima entre ~500 y 800; casi cero por encima de ~1,500 | Sin patrón claro | Alta por debajo de ~50; casi cero por encima de ~150 |
+| *O. virginianus* | Máxima ~19; baja con más calor | Aumenta con inviernos más cálidos | Casi cero por debajo de ~450; alta en un rango amplio | Estable; cae por encima de ~125 | Casi cero en 0; alta con poca lluvia; baja lentamente al aumentar |
+| *P. concolor* | Alta hasta ~26; casi cero por encima de ~38 | Aumenta hasta ~18; casi cero por encima de ~20 | Casi cero por debajo de ~400; máxima en sitios húmedos | Sin patrón claro | Máxima cerca de ~200; casi cero por encima de ~400 |
+| *U. cinereoargenteus* | Alta hasta ~25; baja con más calor | Aumenta con inviernos más cálidos | Máxima con lluvia moderada (~1,000); baja gradualmente | Aumenta con lluvia más estacional (> ~120) | Alta por debajo de ~100; baja lentamente al aumentar |
 
-Los valores de AUC y contribución se obtienen también en R (Paso 4) desde `maxentResults.csv`, lo que permite verificar los que se leen en los reportes.
+El AUC y la contribución de cada variable se documentan en el Paso 4, a partir de `maxentResults.csv`.
 
 **Salidas:** `04-maxent/results/` (archivos por especie y réplica, `maxentResults.csv`, `maxent.log` y `plots/`).
 
-**Decisión** (completar)
+**Decisión**
 
-> **Modelo BAM y área accesible.** Maxent estima dónde el clima es adecuado (la **A** del modelo BAM), pero no considera las interacciones bióticas (**B**) ni la capacidad de dispersión (**M**). Por eso puede marcar como idóneas zonas de México a las que la especie no ha podido llegar. Lo ideal sería delimitar M a la provincia biogeográfica donde se distribuye cada especie; aquí se usó todo México (ver Limitaciones).
+Las curvas de respuesta son coherentes con la ecología conocida de las cinco especies, por lo que los modelos se consideran biológicamente razonables y se continúa con su evaluación numérica (Paso 4). Se distinguen tres patrones:
+
+- ***L. rufus*** y ***C. latrans*** se asocian con climas secos y templados con inviernos fríos (sierras, Altiplano y norte del país). El lince es el más restringido: su idoneidad cae casi a cero con inviernos cálidos (BIO6 > ~11 °C) o lluvia abundante.
+- ***O. virginianus*** y ***U. cinereoargenteus*** son generalistas: toleran un rango amplio de lluvia y aumentan su idoneidad con inviernos cálidos. El venado evita sobre todo la aridez extrema (BIO12 < ~450 mm y BIO17 cercano a 0); la zorra se asocia con lluvia muy estacional.
+- ***P. concolor*** se asocia con climas templados y relativamente húmedos, y evita tanto la aridez extrema como el calor intenso. Sus curvas tienen la mayor variación entre réplicas, porque es la especie con menos registros (377 celdas). Su baja idoneidad en zonas desérticas puede reflejar el sesgo de muestreo de GBIF más que su ausencia real.
+
+En las cinco especies, el calor extremo del verano (BIO5) reduce la idoneidad, y la disponibilidad de agua en la temporada seca (BIO12 y BIO17) separa a las especies de climas secos de las de climas húmedos. Esto apoya la justificación biológica de las variables seleccionadas (objetivo 2, Paso 9).
