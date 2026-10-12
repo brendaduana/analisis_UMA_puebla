@@ -327,3 +327,270 @@ Las curvas de respuesta son coherentes con la ecología conocida de las cinco es
 - ***P. concolor*** se asocia con climas templados y relativamente húmedos, y evita tanto la aridez extrema como el calor intenso. Sus curvas tienen la mayor variación entre réplicas, porque es la especie con menos registros (377 celdas). Su baja idoneidad en zonas desérticas puede reflejar el sesgo de muestreo de GBIF más que su ausencia real.
 
 En las cinco especies, el calor extremo del verano (BIO5) reduce la idoneidad, y la disponibilidad de agua en la temporada seca (BIO12 y BIO17) separa a las especies de climas secos de las de climas húmedos. Esto apoya la justificación biológica de las variables seleccionadas (objetivo 2, Paso 9).
+
+## Paso 4 - Desempeño de los modelos
+
+En el Paso 3 se revisaron los reportes de Maxent de forma visual. En este paso se obtienen en R los valores numéricos de cada modelo desde la tabla resumen que genera Maxent (`maxentResults.csv`), para las cinco especies a la vez. Se evalúa:
+
+- **AUC de entrenamiento y de prueba:** qué tan bien distingue el modelo las presencias del fondo. Un modelo al azar da 0.5; valores cercanos a 0.9 o mayores indican un buen modelo, y entre 0.7 y 0.8 puede considerarse aceptable. Importa sobre todo el **AUC de prueba**, calculado con el 10% de los puntos que el modelo no usó; si es mucho menor que el de entrenamiento, hay sobreajuste.
+- **Umbral del percentil 10:** el valor de idoneidad que se usará en el Paso 5 para convertir los mapas en idóneo/no idóneo.
+- **Contribución de las variables:** cuánto aporta cada variable al modelo (Paso 4.3).
+
+### 4.1 Leer la tabla resumen de Maxent
+
+```r
+resultados_maxent <- read.csv("../04-maxent/results/maxentResults.csv",
+                              check.names = FALSE)
+
+names(resultados_maxent)
+resultados_maxent$Species
+```
+
+- `check.names = FALSE` conserva los nombres originales de las columnas de Maxent, que tienen espacios y `#` (p. ej. `Test AUC`, `#Training samples`). Sin esta opción, R los cambiaría (p. ej. `Test.AUC`, `X.Training.samples`).
+- `names()` muestra las columnas disponibles.
+- `resultados_maxent$Species` muestra las filas de la tabla.
+
+**Resultado**
+
+La tabla tiene 119 columnas y 55 filas: por cada especie, una fila por réplica (`Canis_latrans_0` … `Canis_latrans_9`) y una fila con el promedio de las 10 réplicas (`Canis_latrans (average)`). Las columnas incluyen el AUC de entrenamiento y de prueba, la desviación estándar del AUC, la contribución e importancia por permutación de cada variable, los resultados del jackknife y varios umbrales.
+
+**Decisión**
+
+Se usa solo la fila `(average)` de cada especie, porque resume las 10 réplicas y corresponde a los mapas promedio (`_avg.asc`) que se usarán en los pasos 5 y 6.
+
+### 4.2 Tabla de desempeño
+
+```r
+promedios <- resultados_maxent[grepl("\\(average\\)", resultados_maxent$Species), ]
+
+promedios$Species
+
+col_umbral <- "10 percentile training presence Cloglog threshold"
+
+resumen_maxent <- data.frame(
+  especie = sub(" \\(average\\)", "", promedios$Species),
+  presencias_entrenamiento = round(promedios[["#Training samples"]]),
+  presencias_prueba = round(promedios[["#Test samples"]]),
+  auc_entrenamiento = round(promedios[["Training AUC"]], 3),
+  auc_prueba = round(promedios[["Test AUC"]], 3),
+  auc_prueba_de = round(promedios[["AUC Standard Deviation"]], 3),
+  umbral_p10 = round(promedios[[col_umbral]], 3)
+)
+
+resumen_maxent
+
+write.csv(resumen_maxent, "results/tables/03_desempeno_maxent.csv", row.names = FALSE)
+```
+
+- `grepl("\\(average\\)", ...)` selecciona las filas cuyo nombre contiene `(average)`. Los `\\` son necesarios porque los paréntesis tienen un significado especial en R.
+- `sub(" \\(average\\)", "", ...)` quita el texto ` (average)` del nombre, para que coincida con el de los archivos `_avg.asc` (p. ej. `Canis_latrans`).
+- `[["…"]]` toma cada columna por su nombre exacto.
+- `round()` redondea a tres decimales; en las presencias, a enteros, porque Maxent las promedia entre réplicas.
+- `AUC Standard Deviation` es la desviación estándar del AUC de prueba entre las 10 réplicas.
+
+**Resultado**
+
+| Especie | Presencias entr. / prueba | AUC entrenamiento | AUC prueba (± DE) | Umbral p10 |
+|---|---|---|---|---|
+| *C. latrans* | 954 / 106 | 0.679 | 0.661 ± 0.025 | 0.416 |
+| *L. rufus* | 487 / 54 | 0.763 | 0.732 ± 0.030 | 0.441 |
+| *O. virginianus* | 1,065 / 118 | 0.715 | 0.701 ± 0.022 | 0.426 |
+| *P. concolor* | 341 / 37 | 0.774 | 0.746 ± 0.040 | 0.383 |
+| *U. cinereoargenteus* | 1,083 / 120 | 0.675 | 0.671 ± 0.025 | 0.397 |
+
+Las presencias de entrenamiento y prueba suman las celdas únicas del Paso 2.3, divididas 90/10. El AUC de prueba es casi igual al de entrenamiento en todas las especies (diferencia ≤ 0.03) y varía poco entre réplicas (DE ≤ 0.04).
+
+**Salida:** `results/tables/03_desempeno_maxent.csv`.
+
+**Decisión**
+
+*L. rufus*, *O. virginianus* y *P. concolor* tienen un AUC de prueba aceptable (0.70–0.75). *C. latrans* y *U. cinereoargenteus* quedan por debajo de 0.7. El AUC bajo de estas dos especies refleja su amplia distribución en México: su clima se parece al de casi todo el fondo, por lo que el modelo no puede distinguir con claridad las presencias. Esto es coherente con sus curvas de respuesta (Paso 3.3), las más amplias de las cinco especies, y con el uso de todo México como área accesible (M).
+
+No hay sobreajuste (AUC de entrenamiento y prueba similares) y las réplicas son estables. Se usan los cinco modelos en los pasos siguientes, sin cambiar la configuración. Los resultados de *C. latrans* y *U. cinereoargenteus* se interpretan con cautela, porque su idoneidad discrimina poco entre sitios.
+
+### 4.3 Contribución de las variables
+
+Se obtienen dos medidas de la importancia de cada variable, promediadas entre las 10 réplicas:
+
+| Medida | Qué indica |
+|---|---|
+| **Contribución** | Cuánto usó Maxent cada variable al construir el modelo. Depende del orden en que las incorporó |
+| **Importancia por permutación** | Cuánto empeora el modelo si se desordenan los valores de esa variable. Es más confiable cuando hay variables correlacionadas |
+
+```r
+col_contrib <- grep(" contribution$", names(promedios), value = TRUE)
+col_perm <- grep(" permutation importance$", names(promedios), value = TRUE)
+
+contribucion <- data.frame(
+  especie = sub(" \\(average\\)", "", promedios$Species),
+  round(promedios[, col_contrib], 1)
+)
+names(contribucion) <- c("especie", sub(" contribution", "", col_contrib))
+
+permutacion <- data.frame(
+  especie = sub(" \\(average\\)", "", promedios$Species),
+  round(promedios[, col_perm], 1)
+)
+names(permutacion) <- c("especie", sub(" permutation importance", "", col_perm))
+
+contribucion
+permutacion
+
+write.csv(contribucion, "results/tables/03_contribucion_variables.csv", row.names = FALSE)
+write.csv(permutacion, "results/tables/03_importancia_permutacion.csv", row.names = FALSE)
+```
+
+- `grep(" contribution$", ...)` busca las columnas cuyo nombre termina en ` contribution`, una por variable; el `$` indica "al final del nombre". Lo mismo con ` permutation importance`.
+- `sub(...)` acorta los nombres de las columnas a `BIO12`, `BIO15`, etc.
+- `round(..., 1)` redondea a un decimal; los valores son porcentajes.
+
+**Resultado**
+
+Contribución (%):
+
+| Especie | BIO5 | BIO6 | BIO12 | BIO15 | BIO17 |
+|---|---|---|---|---|---|
+| *C. latrans* | 29.6 | **31.1** | 28.6 | 6.0 | 4.7 |
+| *L. rufus* | 24.5 | **54.3** | 7.6 | 9.1 | 4.4 |
+| *O. virginianus* | 13.9 | 5.1 | **63.9** | 8.4 | 8.7 |
+| *P. concolor* | 23.0 | 15.2 | **32.2** | 9.5 | 20.1 |
+| *U. cinereoargenteus* | **31.4** | 29.0 | 23.0 | 7.0 | 9.6 |
+
+Importancia por permutación (%):
+
+| Especie | BIO5 | BIO6 | BIO12 | BIO15 | BIO17 |
+|---|---|---|---|---|---|
+| *C. latrans* | **33.8** | 17.0 | 27.8 | 15.1 | 6.2 |
+| *L. rufus* | 20.0 | **32.2** | 21.5 | 12.9 | 13.3 |
+| *O. virginianus* | 22.9 | 20.6 | **30.7** | 8.3 | 17.5 |
+| *P. concolor* | 24.4 | 22.6 | **26.7** | 15.7 | 10.5 |
+| *U. cinereoargenteus* | 27.7 | **40.9** | 12.8 | 7.7 | 10.9 |
+
+**Salidas:** `results/tables/03_contribucion_variables.csv` y `results/tables/03_importancia_permutacion.csv`.
+
+**Decisión**
+
+BIO5, BIO6 y BIO12 son las variables principales en las cinco especies; BIO15 y BIO17 tienen un papel secundario. Las variables más importantes coinciden con las curvas de respuesta (Paso 3.3): la temperatura mínima invernal (BIO6) domina en *L. rufus* y *U. cinereoargenteus*, la precipitación anual (BIO12) en *O. virginianus* y *P. concolor*, y *C. latrans*, la especie más generalista, depende de varias variables con un peso similar.
+
+En *O. virginianus*, la contribución de BIO12 (63.9%) es mucho mayor que su importancia por permutación (30.7%). Esto ocurre porque BIO12 comparte información con BIO6 y BIO17 (ρ = 0.58 y 0.57; objetivo 2) y Maxent la incorporó primero. Por eso la interpretación se basa en la **importancia por permutación**, que muestra que el modelo del venado depende de forma más equilibrada de BIO12, BIO5 y BIO6.
+
+Todas las variables aportan al menos un 6% en todas las especies, así que se mantienen las cinco y no se vuelven a correr los modelos.
+
+# Paso 5 · Mapas de idoneidad y mapas binarios ---####
+
+# 5.1 Leer los mapas promedio de Maxent (_avg.asc)
+
+especies <- resumen_maxent$especie   # p. ej. "Canis_latrans"
+
+mapas <- rast(paste0("../04-maxent/results/", especies, "_avg.asc"))
+names(mapas) <- especies
+crs(mapas) <- "EPSG:4326"   # los .asc de Maxent no traen sistema de coordenadas
+
+mapas
+
+plot(mapas)
+
+## Paso 5 - Mapas de idoneidad y mapas binarios
+
+### 5.1 Leer los mapas promedio
+
+Se usan los mapas promedio de las 10 réplicas (`_avg.asc`) que generó Maxent en el Paso 3.
+
+```r
+especies <- resumen_maxent$especie
+
+mapas <- rast(paste0("../04-maxent/results/", especies, "_avg.asc"))
+names(mapas) <- especies
+crs(mapas) <- "EPSG:4326"
+
+mapas
+
+plot(mapas)
+```
+
+- `especies` toma los nombres de la tabla del Paso 4, para que los mapas queden en el mismo orden que el umbral p10 de cada especie (Paso 5.2).
+- `paste0(...)` arma la ruta de cada archivo, p. ej. `../04-maxent/results/Canis_latrans_avg.asc`.
+- `rast()` lee los cinco mapas y los junta en un solo objeto de 5 capas.
+- `crs()` asigna WGS 84, el mismo sistema de WorldClim, porque los `.asc` de Maxent no lo guardan.
+
+**Resultado**
+
+Los mapas reproducen los patrones de las curvas de respuesta (Paso 3.3):
+
+| Especie | Idoneidad alta | Idoneidad baja |
+|---|---|---|
+| *C. latrans* | Centro de Baja California, Eje Neovolcánico y sierras de Puebla y Oaxaca | Sureste (Tabasco, Chiapas, Yucatán) y Sierra Madre Occidental |
+| *L. rufus* | Sierras y Altiplano del centro, Sierra Madre Occidental | Sureste y costas cálidas (casi nula) |
+| *O. virginianus* | Península de Yucatán, vertiente del Golfo y centro del país | Desiertos de Sonora, Chihuahua y Baja California |
+| *P. concolor* | Sierra Madre Occidental, vertiente del Golfo y Chiapas | Desiertos del norte y Baja California |
+| *U. cinereoargenteus* | Península de Yucatán, centro y sur del país | Desiertos del norte |
+
+**Decisión**
+
+Los mapas comparten la rejilla de las capas de entrada, por lo que pueden compararse entre especies y con la ubicación de la UMA (Paso 6).
+
+### 5.2 Mapas binarios
+
+Para clasificar cada celda como idónea o no idónea se usa el **umbral del percentil 10 de presencias de entrenamiento** (Paso 4.2): el valor de idoneidad por debajo del cual queda el 10% de las presencias. Supone que hasta un 10% de los registros pueden ser errores o sitios marginales, un supuesto razonable para datos de GBIF.
+
+```r
+binarios <- rast(lapply(seq_along(especies), function(i) {
+  mapas[[i]] >= resumen_maxent$umbral_p10[i]
+}))
+names(binarios) <- especies
+
+binarios
+
+plot(binarios)
+```
+
+- `lapply(seq_along(especies), ...)` recorre las cinco especies; en cada una compara su mapa con su propio umbral, porque cada especie tiene uno distinto.
+- `mapas[[i]] >= ...` devuelve `TRUE` (idóneo) o `FALSE` (no idóneo) en cada celda.
+- `rast()` junta los cinco resultados en un objeto de 5 capas.
+
+**Resultado**
+
+`binarios`: 5 capas con valores `TRUE`/`FALSE`, en la misma rejilla que los mapas de idoneidad.
+
+| Especie | Zonas no idóneas |
+|---|---|
+| *C. latrans* | Sureste, costa del Pacífico sur y parches de la Sierra Madre Occidental |
+| *L. rufus* | Sureste, costas cálidas y parte de Baja California |
+| *O. virginianus* | Desiertos de Sonora, Chihuahua y Baja California |
+| *P. concolor* | Desiertos del norte, Altiplano y Baja California |
+| *U. cinereoargenteus* | Desiertos del norte |
+
+### 5.3 Porcentaje de México clasificado como idóneo
+
+```r
+area_idonea <- data.frame(
+  especie = especies,
+  umbral_p10 = resumen_maxent$umbral_p10,
+  porcentaje_idoneo = round(unlist(global(binarios, "mean", na.rm = TRUE)) * 100, 1)
+)
+
+area_idonea
+
+write.csv(area_idonea, "results/tables/03_area_idonea.csv", row.names = FALSE)
+```
+
+- `global(binarios, "mean", na.rm = TRUE)` calcula el promedio de cada capa. Como `TRUE` vale 1 y `FALSE` vale 0, el promedio es la proporción de celdas idóneas.
+- `* 100` lo convierte en porcentaje.
+
+**Resultado**
+
+| Especie | Umbral p10 | % de México idóneo |
+|---|---|---|
+| *C. latrans* | 0.416 | 70.7 |
+| *L. rufus* | 0.441 | 56.4 |
+| *O. virginianus* | 0.426 | 64.0 |
+| *P. concolor* | 0.383 | 56.8 |
+| *U. cinereoargenteus* | 0.397 | 74.2 |
+
+Las especies con mayor área idónea son las de AUC más bajo (*U. cinereoargenteus* y *C. latrans*), y las de menor área, las de AUC más alto (*L. rufus* y *P. concolor*).
+
+**Salida:** `results/tables/03_area_idonea.csv`.
+
+**Decisión**
+
+Entre el 56% y el 74% de México resulta idóneo para cada especie, así que el mapa binario discrimina poco, sobre todo en las especies generalistas. Por eso, en el Paso 6 la ubicación de la UMA se evalúa principalmente con la **idoneidad continua** y su **percentil** respecto a las presencias de cada especie; la clasificación binaria se reporta solo como complemento.
