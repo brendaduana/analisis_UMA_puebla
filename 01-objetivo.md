@@ -8,10 +8,6 @@ El primer flujo de trabajo consiste en lo siguiente:
 4. Hacer una limpieza final en Excel.
 5. Descargar las capas de WorldClim.
 
-## Estructura de carpetas
-
-Todos los archivos se guardan dentro de `C:\analisis_uma\`:
-
 ## 1. Descarga en GBIF
 
 Repetir este paso una vez por especie.
@@ -62,9 +58,9 @@ Repetir este paso una vez por especie.
    - Campo X: `decimalLongitude`
    - Campo Y: `decimalLatitude`
    - SRC: `EPSG:4326 – WGS 84`
-4. Exportar la capa como **shapefile (.shp)** en `02-data-clean-qgis/` para poder editarla.
-5. Activar la edición, seleccionar los puntos erróneos (en el mar o fuera del área de distribución conocida) y eliminarlos.
-6. Guardar los cambios.
+3. Exportar la capa como **shapefile (.shp)** en `02-data-clean-qgis/` para poder editarla.
+4. Activar la edición, seleccionar los puntos erróneos (en el mar o fuera del área de distribución conocida) y eliminarlos.
+5. Guardar los cambios.
 
 ## 4. Archivo final en Excel
 
@@ -88,7 +84,7 @@ Estos cinco archivos CSV son la entrada de registros para Maxent.
 
 ## 5. Descarga de WorldClim
 
-Por último, realiza los siguiente pasos:
+Por último, realiza los siguientes pasos:
 
 1. Entrar a la página de [WorldClim 2.1](https://www.worldclim.org/data/worldclim21.html).
 2. En la sección de [variables bioclimáticas](https://www.worldclim.org/data/bioclim.html), descargar el archivo de resolución **2.5 minutos** (~4.5 km).
@@ -108,3 +104,9 @@ Por último, realiza los siguiente pasos:
 - Las capas de WorldClim representan el clima promedio del periodo 1970–2000. El filtro de 1980–2020 mantiene los registros en un periodo compatible y coincide con el fin del muestreo del estudio de antecedente.
 - El nicho climático se estima con clima promedio de largo plazo, por lo que los registros no se emparejan año por año con las capas.
 - *Limitación:* los registros posteriores a 2000 quedan fuera del periodo que cubren las capas climáticas.
+
+## Limitaciones
+
+- **Sesgo espacial:** aunque se eliminaron duplicados exactos, los registros pueden seguir agrupados cerca de ciudades, carreteras o áreas protegidas. En los objetivos 3 a 5 se conservó una sola presencia por celda de las capas climáticas (~4.5 km), lo que reduce la agrupación a esa escala, pero no se aplicó un adelgazamiento espacial a una distancia mayor ni se corrigió el sesgo de muestreo.
+- **Calidad de los registros:** no se filtraron los registros por tipo (`basisOfRecord`, por ejemplo, observación humana frente a ejemplar de museo) ni por incertidumbre de las coordenadas (`coordinateUncertaintyInMeters`). Solo se eliminaron registros sin coordenadas, duplicados y puntos claramente erróneos en QGIS.
+- **Área geográfica:** los registros se limitan a México. Las cinco especies también viven fuera del país, por lo que el nicho estimado corresponde solo a la parte mexicana de su distribución.
