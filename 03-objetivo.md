@@ -868,16 +868,13 @@ ggsave("results/figures/03_mapas_binarios.png", plot = fig_binarios,
 - **Métodos complementarios:** el umbral del percentil 10 (Pearson et al. 2007) y la importancia por permutación no se vieron en la práctica de clase; se usaron para clasificar los mapas y para interpretar variables correlacionadas.
 
 ## Referencias
- 
-> Verificar volumen y páginas antes de la entrega.
- 
-- Barve, N., et al. (2011). The crucial role of the accessible area in ecological niche modeling and species distribution modeling. *Ecological Modelling*, 222, 1810–1819.
-- Lobo, J. M., Jiménez-Valverde, A., & Real, R. (2008). AUC: a misleading measure of the performance of predictive distribution models. *Global Ecology and Biogeography*, 17, 145–151.
-- Pearson, R. G., et al. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. *Journal of Biogeography*, 34, 102–117.
-- Peterson, A. T., Papeş, M., & Soberón, J. (2008). Rethinking receiver operating characteristic analysis applications in ecological niche modeling. *Ecological Modelling*, 213, 63–72.
-- Phillips, S. J., Dudík, M., & Schapire, R. E. Maxent software for modeling species niches and distributions (Version 3.4.4). http://biodiversityinformatics.amnh.org/open_source/maxent/
-- Phillips, S. J., et al. (2017). Opening the black box: an open-source release of Maxent. *Ecography*, 40, 887–893.
-- Plata-Pérez, F. X., et al. (2024). Descubriendo los patrones de actividad del ciervo *Odocoileus virginianus* (Artiodactyla: Cervidae) y sus depredadores en la Región Árida de México. *Revista de Biología Tropical*, 72, e55515.
-- Soberón, J., & Peterson, A. T. (2005). Interpretation of models of fundamental ecological niches and species' distributional areas. *Biodiversity Informatics*, 2, 1–10.
-- VanDerWal, J., et al. (2009). Abundance and the environmental niche: environmental suitability estimated from niche models predicts the upper limit of local abundance. *The American Naturalist*, 174, 282–291.
-- Weber, M. M., et al. (2017). Is there a correlation between abundance and environmental suitability derived from ecological niche modelling? A meta-analysis. *Ecography*, 40, 817–828.
+
+- Lobo, J. M., Jiménez-Valverde, A., & Real, R. (2008). AUC: a misleading measure of the performance of predictive distribution models. *Global Ecology and Biogeography*, 17(2), 145–151. https://doi.org/10.1111/j.1466-8238.2007.00358.x
+- Pearson, R. G., Raxworthy, C. J., Nakamura, M., & Peterson, A. T. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. *Journal of Biogeography*, 34(1), 102–117. https://doi.org/10.1111/j.1365-2699.2006.01594.x
+- Peterson, A. T., Papeş, M., & Soberón, J. (2008). Rethinking receiver operating characteristic analysis applications in ecological niche modeling. *Ecological Modelling*, 213(1), 63–72. https://doi.org/10.1016/j.ecolmodel.2007.11.008
+- Phillips, S. J., Anderson, R. P., Dudík, M., Schapire, R. E., & Blair, M. E. (2017). Opening the black box: an open-source release of Maxent. *Ecography*, 40(7), 887–893. https://doi.org/10.1111/ecog.03049
+- Phillips, S. J., Dudík, M., & Schapire, R. E. (s. f.). *Maxent software for modeling species niches and distributions* (Versión 3.4.4) [Software]. https://biodiversityinformatics.amnh.org/open_source/maxent/ (consultado el 12 de octubre de 2026)
+- Plata-Pérez, F. X., Urbina-Flores, D. P., Duana Hernández, B., Villarreal-Espino-Barros, O. A., Gloria-Trujillo, A., & Mendoza-Martínez, G. D. (2024). Unveiling activity patterns of the deer *Odocoileus virginianus* (Artiodactyla: Cervidae) and its predators in Mexico's Arid Region. *Revista de Biología Tropical*, 72, e55515. https://doi.org/10.15517/rev.biol.trop..v72i1.55515
+- Soberón, J., & Peterson, A. T. (2005). Interpretation of models of fundamental ecological niches and species' distributional areas. *Biodiversity Informatics*, 2, 1–10. https://doi.org/10.17161/bi.v2i0.4
+- VanDerWal, J., Shoo, L. P., Johnson, C. N., & Williams, S. E. (2009). Abundance and the environmental niche: environmental suitability estimated from niche models predicts the upper limit of local abundance. *The American Naturalist*, 174(2), 282–291. https://doi.org/10.1086/600087
+- Weber, M. M., Stevens, R. D., Diniz-Filho, J. A. F., & Grelle, C. E. V. (2017). Is there a correlation between abundance and environmental suitability derived from ecological niche modelling? A meta-analysis. *Ecography*, 40(7), 817–828. https://doi.org/10.1111/ecog.02125
