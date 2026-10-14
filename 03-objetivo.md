@@ -225,10 +225,30 @@ presencias_maxent <- presencias[!fuera, ]
 
 Se eliminaron los 11 puntos. Son muy pocos (entre 1 y 3 por especie, menos del 0.4% en todas) y su pérdida no cambia la representación del nicho; dejarlos solo haría que Maxent los descartara con una advertencia.
 
- ACAAAAA VOY 
 ### 2.3 Celdas únicas
  
 Maxent elimina por defecto los registros repetidos **dentro de una misma celda**, así que el número real de presencias que usa es el de celdas únicas.
+
+```r
+celdas <- cellFromXY(
+  bios_mx_sel,
+  as.matrix(presencias_maxent[, c("longitude", "latitude")])
+)
+ 
+registros_maxent <- data.frame(
+  especie = names(table(presencias_maxent$species)),
+  registros = as.vector(table(presencias_maxent$species)),
+  celdas_unicas = as.vector(tapply(celdas, presencias_maxent$species,
+                                   function(x) length(unique(x))))
+)
+ 
+registros_maxent
+ 
+write.csv(registros_maxent, "results/tables/03_registros_maxent.csv", row.names = FALSE)
+```
+ 
+- `cellFromXY()` devuelve el número de celda donde cae cada punto; dos puntos en la misma celda tienen el mismo número.
+- `tapply(..., function(x) length(unique(x)))` cuenta cuántas celdas distintas ocupa cada especie.
 
 **Resultado**
 
@@ -245,9 +265,9 @@ Entre el 36% y el 56% de los registros comparten celda con otro de la misma espe
 **Salida:** `results/tables/03_registros_maxent.csv`.
 
 **Decisión**
-
-No se eliminan duplicados en R: Maxent lo hace solo con la opción *Remove duplicate presence records*. Las celdas únicas son las presencias efectivas de cada modelo; con el 25% reservado para prueba, *P. concolor* tendrá unas 283 presencias de entrenamiento y 94 de prueba, suficientes para Maxent. El agrupamiento de los registros se reporta como posible sesgo de muestreo en las limitaciones.
-
+ 
+No se eliminan duplicados en R: Maxent lo hace solo con la opción *Remove duplicate presence records*. Las celdas únicas son las presencias efectivas de cada modelo; con el 10% reservado para prueba, *P. concolor*, la especie con menos datos, tendrá unas 340 presencias de entrenamiento y 37 de prueba. El agrupamiento de los registros se reporta como posible sesgo de muestreo en las limitaciones.
+ 
 ## Paso 3 - Correr Maxent
 
 Este paso se hace en la interfaz de Maxent, siguiendo la práctica de clase. Maxent no requiere instalación: se abre `maxent.jar` desde la carpeta descomprimida. Si no abre, hay que instalar Java.
@@ -270,33 +290,34 @@ La ventana de Maxent tiene tres secciones: arriba a la izquierda, las presencias
 | Projection layers directory | vacío | Solo se usa para proyectar a otro tiempo o región |
 
 ### 3.2 Settings
-
+ 
 | Opción | Valor | Por qué |
 |---|---|---|
 | Random test percentage | **10** | 90% de los puntos para construir el modelo y 10% para evaluarlo, como en la práctica de clase |
 | Replicates | **10** | Varias réplicas permiten obtener un modelo promedio y su variación; en clase se usaron 3 como ejemplo y se recomendaron más |
 | Replicated run type | **Bootstrap** | Cada réplica remuestrea los puntos de entrenamiento, como en clase |
-| Random seed | ✓ (Maxent lo activa automáticamente con réplicas) | Cada réplica usa una partición distinta de los datos; sin esto, las réplicas serían idénticas |
-| Show warnings / Ask questions | sin marcar | Evita ventanas emergentes durante la corrida, como en clase |
+| Random seed | sin marcar (Maxent lo activa automáticamente al correr con réplicas; el log registra `randomseed`) | Cada réplica usa una partición distinta de los datos; sin esto, las réplicas serían idénticas |
+| Give visual warnings | sin marcar (`nowarnings` en el log) | Evita ventanas emergentes durante la corrida, como en clase |
+| Ask before overwriting | predeterminado | No afecta los resultados |
 | Remove duplicate presence records | ✓ (predeterminado) | Una presencia por celda (Paso 2.3) |
 | Max number of background points | 10000 (predeterminado) | |
 | Regularization multiplier | 1 (predeterminado) | |
 | Pestañas *Advanced* y *Experimental* | sin cambios | Se usan los valores predeterminados |
-
+ 
 Clic en **Run**. Maxent construye las 10 réplicas de cada especie, una especie tras otra, y al final calcula los modelos resumen (promedio, mediana, mínimo, máximo y desviación estándar).
-
+ 
 **Resultado**
-
+ 
 Maxent 3.4.4 leyó las 5 capas (102,316 celdas con datos, las mismas del objetivo 2) y construyó 10 réplicas para cada especie (50 modelos en total). La configuración queda registrada en `04-maxent/results/maxent.log`:
-
+ 
 ```
 java density.MaxEnt nowarnings noprefixes responsecurves jackknife outputdirectory=C:\analisis_uma\04-maxent\results samplesfile=C:\analisis_uma\04-maxent\presence\presencias_5spp.csv environmentallayers=C:\analisis_uma\04-maxent\capas_asc randomseed randomtestpoints=10 replicates=10 replicatetype=bootstrap
 ```
-
+ 
 Las opciones que no aparecen en esa línea se dejaron en su valor predeterminado (salida cloglog, 10,000 puntos de fondo, eliminación de duplicados por celda, regularización 1).
-
+ 
 Archivos generados en `04-maxent/results/`, por especie (con guion bajo en lugar del espacio):
-
+ 
 | Archivo | Contenido |
 |---|---|
 | `Puma_concolor_0.asc` … `Puma_concolor_9.asc` | Mapa de idoneidad de cada réplica |
@@ -305,62 +326,63 @@ Archivos generados en `04-maxent/results/`, por especie (con guion bajo en lugar
 | `Puma_concolor_median.asc`, `_min.asc`, `_max.asc` | Otros resúmenes de las réplicas |
 | `Puma_concolor.html` | **Reporte general** de las 10 réplicas: curva ROC, mapas resumen, curvas de respuesta y jackknife |
 | `Puma_concolor_0.html` … `_9.html` | Reporte de cada réplica |
-
-Además: `maxentResults.csv` (una fila por réplica y una fila `(average)` por especie), `maxent.log` y la carpeta `plots/` con las imágenes que aparecen en los reportes.
+ 
+Además: `maxentResults.csv` (una fila por réplica y una fila `(average)` por especie), `maxent.log`, la carpeta `plots/` con las imágenes que aparecen en los reportes y archivos auxiliares de cada réplica (`.lambdas` y `.csv`).
 
 ### 3.3 Revisión de los reportes
-
+ 
 Para cada especie se abre en el navegador el reporte **general**, el que no tiene número (p. ej. `Puma_concolor.html`). Resume las 10 réplicas: la línea roja de cada gráfica es el promedio y la franja azul, la variación entre réplicas.
-
+ 
 **1. Curva ROC y AUC**
-
+ 
 El AUC mide qué tan bien distingue el modelo los sitios con presencia del resto del área. Un modelo al azar da 0.5 (la línea diagonal de la gráfica). Valores cercanos a 0.9 o mayores indican un buen modelo; entre 0.7 y 0.8 puede considerarse aceptable.
-
-Dónde está: debajo de la curva ROC, en la frase *"The average test AUC for the replicate runs is …, and the standard deviation is …"*. Ese es el AUC promedio de prueba y su desviación estándar.
-
+ 
+Dónde está: debajo de la curva ROC, en la frase *"The average test AUC for the replicate runs is …, and the standard deviation is …"*.
+ 
 **2. Contribución de variables y jackknife**
-
+ 
 Indican cuánto aporta cada variable al modelo.
-
-Dónde está: en la sección *Analysis of variable contributions*. La tabla muestra *Percent contribution* (cuánto aportó cada variable al construir el modelo) y *Permutation importance* (cuánto empeora el modelo si se desordenan los valores de esa variable). La variable con mayor *Percent contribution* es la más importante.
-
+ 
+Dónde está: en la sección *Analysis of variable contributions*. La tabla muestra *Percent contribution* (cuánto aportó cada variable al construir el modelo) y *Permutation importance* (cuánto empeora el modelo si se desordenan los valores de esa variable). Ambas se analizan en el Paso 4.3.
+ 
 Las gráficas del jackknife muestran qué pasa si se omite cada variable (barra verde clara) y si se usa sola (barra azul). Una barra azul larga indica que la variable por sí sola explica bien la distribución; si la barra verde clara se acorta mucho, esa variable aporta información que ninguna otra tiene.
-
+ 
 **3. Curvas de respuesta**
-
+ 
 Muestran cómo cambia la idoneidad a lo largo de cada variable e indican las preferencias climáticas de la especie.
-
-Dónde está: hay dos juegos de curvas. Se usa el segundo, *each of the following curves shows… a Maxent model created using only the corresponding variable*, porque muestra el efecto de cada variable sola y es el más fácil de interpretar. En cada gráfica, el eje X es la variable y el eje Y la idoneidad (0 a 1).
-
-Para cada especie se describe dónde está el pico de la curva, o hacia dónde sube, en la variable de mayor contribución y en las que tengan una respuesta clara (BIO5 y BIO6 en °C; BIO12 y BIO17 en mm; BIO15 sin unidad).
-
+ 
+Dónde está: hay dos juegos de curvas. Se usa el segundo, *each of the following curves represents a different model, namely, a Maxent model created using only the corresponding variable*, porque muestra el efecto de cada variable sola y es el más fácil de interpretar. En cada gráfica, el eje X es la variable y el eje Y la idoneidad (0 a 1). Se ignoran los extremos donde la franja azul se ensancha mucho, porque ahí hay pocos registros.
+ 
 **4. Puntos de entrenamiento y prueba**
-
+ 
 En el reporte de una réplica individual (p. ej. `Puma_concolor_0.html`), el mapa muestra los puntos de **entrenamiento en blanco** y los de **prueba en morado**. Si los puntos de prueba caen en zonas de idoneidad alta, el modelo predice bien sitios que no usó para construirse.
-
-**Resultado** (completar)
-
-| Especie | AUC de prueba (promedio ± DE) | Variable con mayor contribución | Curvas de respuesta |
-|---|---|---|---|
+ 
+**Resultado**
+ 
+Curvas de respuesta de cada especie (modelo con una sola variable; promedio de las 10 réplicas). Los valores son aproximados, leídos de las gráficas.
+ 
+| Especie | BIO5 (°C) | BIO6 (°C) | BIO12 (mm) | BIO15 | BIO17 (mm) |
+|---|---|---|---|---|---|
 | *C. latrans* | Baja con calor extremo (> ~30) | Alta entre ~0 y 10; baja con inviernos cálidos | Máxima con poca lluvia; disminuye al aumentar | Poca influencia | Máxima cerca de 0; baja al aumentar |
 | *L. rufus* | Alta hasta ~23; baja con más calor | Alta entre ~−3 y 10; casi cero por encima de ~11 | Máxima entre ~500 y 800; casi cero por encima de ~1,500 | Sin patrón claro | Alta por debajo de ~50; casi cero por encima de ~150 |
 | *O. virginianus* | Máxima ~19; baja con más calor | Aumenta con inviernos más cálidos | Casi cero por debajo de ~450; alta en un rango amplio | Estable; cae por encima de ~125 | Casi cero en 0; alta con poca lluvia; baja lentamente al aumentar |
 | *P. concolor* | Alta hasta ~26; casi cero por encima de ~38 | Aumenta hasta ~18; casi cero por encima de ~20 | Casi cero por debajo de ~400; máxima en sitios húmedos | Sin patrón claro | Máxima cerca de ~200; casi cero por encima de ~400 |
 | *U. cinereoargenteus* | Alta hasta ~25; baja con más calor | Aumenta con inviernos más cálidos | Máxima con lluvia moderada (~1,000); baja gradualmente | Aumenta con lluvia más estacional (> ~120) | Alta por debajo de ~100; baja lentamente al aumentar |
-
+ 
 El AUC y la contribución de cada variable se documentan en el Paso 4, a partir de `maxentResults.csv`.
-
+ 
 **Salidas:** `04-maxent/results/` (archivos por especie y réplica, `maxentResults.csv`, `maxent.log` y `plots/`).
-
+ 
 **Decisión**
-
+ 
 Las curvas de respuesta son coherentes con la ecología conocida de las cinco especies, por lo que los modelos se consideran biológicamente razonables y se continúa con su evaluación numérica (Paso 4). Se distinguen tres patrones:
-
+ 
 - ***L. rufus*** y ***C. latrans*** se asocian con climas secos y templados con inviernos fríos (sierras, Altiplano y norte del país). El lince es el más restringido: su idoneidad cae casi a cero con inviernos cálidos (BIO6 > ~11 °C) o lluvia abundante.
 - ***O. virginianus*** y ***U. cinereoargenteus*** son generalistas: toleran un rango amplio de lluvia y aumentan su idoneidad con inviernos cálidos. El venado evita sobre todo la aridez extrema (BIO12 < ~450 mm y BIO17 cercano a 0); la zorra se asocia con lluvia muy estacional.
 - ***P. concolor*** se asocia con climas templados y relativamente húmedos, y evita tanto la aridez extrema como el calor intenso. Sus curvas tienen la mayor variación entre réplicas, porque es la especie con menos registros (377 celdas). Su baja idoneidad en zonas desérticas puede reflejar el sesgo de muestreo de GBIF más que su ausencia real.
-
-En las cinco especies, el calor extremo del verano (BIO5) reduce la idoneidad, y la disponibilidad de agua en la temporada seca (BIO12 y BIO17) separa a las especies de climas secos de las de climas húmedos. Esto apoya la justificación biológica de las variables seleccionadas (objetivo 2, Paso 9).
+En las cinco especies, el calor extremo del verano (BIO5) reduce la idoneidad, y la disponibilidad de agua (BIO12 y BIO17) separa a las especies de climas secos de las de climas húmedos. Esto apoya la justificación biológica de las variables seleccionadas (objetivo 2, Paso 9).
+ 
+> **Modelo BAM y área accesible.** Maxent estima dónde el clima es adecuado (la **A** del modelo BAM), pero no considera las interacciones bióticas (**B**) ni la capacidad de dispersión (**M**). Por eso puede marcar como idóneas zonas de México a las que la especie no ha podido llegar. Lo ideal sería delimitar M a la provincia biogeográfica donde se distribuye cada especie; aquí se usó todo México (ver Limitaciones).
 
 ## Paso 4 - Desempeño de los modelos
 
@@ -423,7 +445,7 @@ write.csv(resumen_maxent, "results/tables/03_desempeno_maxent.csv", row.names = 
 - `AUC Standard Deviation` es la desviación estándar del AUC de prueba entre las 10 réplicas.
 
 **Resultado**
-
+ 
 | Especie | Presencias entr. / prueba | AUC entrenamiento | AUC prueba (± DE) | Umbral p10 |
 |---|---|---|---|---|
 | *C. latrans* | 954 / 106 | 0.679 | 0.661 ± 0.025 | 0.416 |
@@ -437,9 +459,9 @@ Las presencias de entrenamiento y prueba suman las celdas únicas del Paso 2.3, 
 **Salida:** `results/tables/03_desempeno_maxent.csv`.
 
 **Decisión**
-
-*L. rufus*, *O. virginianus* y *P. concolor* tienen un AUC de prueba aceptable (0.70–0.75). *C. latrans* y *U. cinereoargenteus* quedan por debajo de 0.7. El AUC bajo de estas dos especies refleja su amplia distribución en México: su clima se parece al de casi todo el fondo, por lo que el modelo no puede distinguir con claridad las presencias. Esto es coherente con sus curvas de respuesta (Paso 3.3), las más amplias de las cinco especies, y con el uso de todo México como área accesible (M).
-
+ 
+*L. rufus*, *O. virginianus* y *P. concolor* tienen un AUC de prueba aceptable (0.70–0.75). *C. latrans* y *U. cinereoargenteus* quedan por debajo de 0.7. El AUC bajo de estas dos especies refleja su amplia distribución en México: su clima se parece al de casi todo el fondo, por lo que el modelo no puede distinguir con claridad las presencias (Lobo et al. 2008). Esto es coherente con sus curvas de respuesta (Paso 3.3), las más amplias de las cinco especies, y con el uso de todo México como área accesible (M).
+ 
 No hay sobreajuste (AUC de entrenamiento y prueba similares) y las réplicas son estables. Se usan los cinco modelos en los pasos siguientes, sin cambiar la configuración. Los resultados de *C. latrans* y *U. cinereoargenteus* se interpretan con cautela, porque su idoneidad discrimina poco entre sitios.
 
 ### 4.3 Contribución de las variables
@@ -501,19 +523,25 @@ Importancia por permutación (%):
 | *U. cinereoargenteus* | 27.7 | **40.9** | 12.8 | 7.7 | 10.9 |
 
 **Salidas:** `results/tables/03_contribucion_variables.csv` y `results/tables/03_importancia_permutacion.csv`.
-
+ 
 **Decisión**
-
-BIO5, BIO6 y BIO12 son las variables principales en las cinco especies; BIO15 y BIO17 tienen un papel secundario. Las variables más importantes coinciden con las curvas de respuesta (Paso 3.3): la temperatura mínima invernal (BIO6) domina en *L. rufus* y *U. cinereoargenteus*, la precipitación anual (BIO12) en *O. virginianus* y *P. concolor*, y *C. latrans*, la especie más generalista, depende de varias variables con un peso similar.
-
+ 
+BIO5, BIO6 y BIO12 son las variables principales en las cinco especies; BIO15 y BIO17 tienen un papel secundario. Las variables más importantes coinciden con las curvas de respuesta (Paso 3.3): 
+- la temperatura mínima invernal (BIO6) domina en *L. rufus* y *U. cinereoargenteus*,
+- la precipitación anual (BIO12) en *O. virginianus* y
+- *P. concolor*, y *C. latrans*, la especie más generalista, depende de varias variables con un peso similar.
+ 
 En *O. virginianus*, la contribución de BIO12 (63.9%) es mucho mayor que su importancia por permutación (30.7%). Esto ocurre porque BIO12 comparte información con BIO6 y BIO17 (ρ = 0.58 y 0.57; objetivo 2) y Maxent la incorporó primero. Por eso la interpretación se basa en la **importancia por permutación**, que muestra que el modelo del venado depende de forma más equilibrada de BIO12, BIO5 y BIO6.
-
+ 
 Todas las variables aportan al menos un 6% en todas las especies, así que se mantienen las cinco y no se vuelven a correr los modelos.
 
-# Paso 5 · Mapas de idoneidad y mapas binarios ---####
+## Paso 5 - Mapas de idoneidad y mapas binarios
+ 
+### 5.1 Leer los mapas promedio
+ 
+Se usan los mapas promedio de las 10 réplicas (`_avg.asc`) que generó Maxent en el Paso 3.
 
-# 5.1 Leer los mapas promedio de Maxent (_avg.asc)
-
+```r
 especies <- resumen_maxent$especie   # p. ej. "Canis_latrans"
 
 mapas <- rast(paste0("../04-maxent/results/", especies, "_avg.asc"))
@@ -523,34 +551,20 @@ crs(mapas) <- "EPSG:4326"   # los .asc de Maxent no traen sistema de coordenadas
 mapas
 
 plot(mapas)
-
-## Paso 5 - Mapas de idoneidad y mapas binarios
-
-### 5.1 Leer los mapas promedio
-
-Se usan los mapas promedio de las 10 réplicas (`_avg.asc`) que generó Maxent en el Paso 3.
-
-```r
-especies <- resumen_maxent$especie
-
-mapas <- rast(paste0("../04-maxent/results/", especies, "_avg.asc"))
-names(mapas) <- especies
-crs(mapas) <- "EPSG:4326"
-
-mapas
-
-plot(mapas)
 ```
 
 - `especies` toma los nombres de la tabla del Paso 4, para que los mapas queden en el mismo orden que el umbral p10 de cada especie (Paso 5.2).
+
 - `paste0(...)` arma la ruta de cada archivo, p. ej. `../04-maxent/results/Canis_latrans_avg.asc`.
+
 - `rast()` lee los cinco mapas y los junta en un solo objeto de 5 capas.
+
 - `crs()` asigna WGS 84, el mismo sistema de WorldClim, porque los `.asc` de Maxent no lo guardan.
 
 **Resultado**
-
-Los mapas reproducen los patrones de las curvas de respuesta (Paso 3.3):
-
+ 
+`mapas`: 5 capas (una por especie), 436 × 760 celdas, resolución 0.0417° y WGS 84, la misma rejilla que las capas climáticas del Paso 1. Los mapas reproducen los patrones de las curvas de respuesta (Paso 3.3):
+ 
 | Especie | Idoneidad alta | Idoneidad baja |
 |---|---|---|
 | *C. latrans* | Centro de Baja California, Eje Neovolcánico y sierras de Puebla y Oaxaca | Sureste (Tabasco, Chiapas, Yucatán) y Sierra Madre Occidental |
@@ -558,9 +572,9 @@ Los mapas reproducen los patrones de las curvas de respuesta (Paso 3.3):
 | *O. virginianus* | Península de Yucatán, vertiente del Golfo y centro del país | Desiertos de Sonora, Chihuahua y Baja California |
 | *P. concolor* | Sierra Madre Occidental, vertiente del Golfo y Chiapas | Desiertos del norte y Baja California |
 | *U. cinereoargenteus* | Península de Yucatán, centro y sur del país | Desiertos del norte |
-
+ 
 **Decisión**
-
+ 
 Los mapas comparten la rejilla de las capas de entrada, por lo que pueden compararse entre especies y con la ubicación de la UMA (Paso 6).
 
 ### 5.2 Mapas binarios
@@ -579,7 +593,9 @@ plot(binarios)
 ```
 
 - `lapply(seq_along(especies), ...)` recorre las cinco especies; en cada una compara su mapa con su propio umbral, porque cada especie tiene uno distinto.
+
 - `mapas[[i]] >= ...` devuelve `TRUE` (idóneo) o `FALSE` (no idóneo) en cada celda.
+
 - `rast()` junta los cinco resultados en un objeto de 5 capas.
 
 **Resultado**
@@ -629,11 +645,9 @@ Las especies con mayor área idónea son las de AUC más bajo (*U. cinereoargent
 
 Entre el 56% y el 74% de México resulta idóneo para cada especie, así que el mapa binario discrimina poco, sobre todo en las especies generalistas. Por eso, en el Paso 6 la ubicación de la UMA se evalúa principalmente con la **idoneidad continua** y su **percentil** respecto a las presencias de cada especie; la clasificación binaria se reporta solo como complemento.
 
-******************************************
-
 ## Paso 6 - Proyectar la UMA en el espacio geográfico
 
-Con los mapas del Paso 5 se evalúa qué tan idóneo es el clima de la UMA Santa Cruz Nuevo para cada especie, y cómo se compara con los sitios donde cada especie ha sido registrada en México.
+Con los mapas del Paso 5 se evalúa qué tan idóneo es el clima de la UMA Santa Cruz Nuevo para cada especie.
 
 ### 6.1 Ubicación de la UMA
 
@@ -645,9 +659,9 @@ uma <- data.frame(
   longitude = -97.8097,
   latitude = 18.2956
 )
-
+ 
 uma_vect <- vect(uma, geom = c("longitude", "latitude"), crs = "EPSG:4326")
-
+ 
 uma_vect
 ```
 
@@ -672,101 +686,76 @@ round(idoneidad_buffer, 3)
 - `extract(binarios, uma_vect)` indica si esa celda es idónea según el umbral p10.
 - `buffer(uma_vect, width = 5000)` crea un círculo de 5 km alrededor de la UMA, y `fun = mean` promedia la idoneidad de las celdas dentro de él. Así el resultado no depende de que el punto caiga justo en el borde de una celda.
 
-### 6.3 Percentil respecto a las presencias
-
-La idoneidad de 0 a 1 no es del todo comparable entre especies, porque cada modelo tiene su propia escala (por ejemplo, sus umbrales p10 van de 0.383 a 0.441). Para compararlas se calcula el **percentil**: el porcentaje de presencias de cada especie con una idoneidad igual o menor que la de la UMA.
-
-```r
-percentil_uma <- sapply(especies, function(sp) {
-  pts <- presencias_maxent[gsub(" ", "_", presencias_maxent$species) == sp,
-                           c("longitude", "latitude")]
-  idoneidad_pts <- extract(mapas[[sp]], as.matrix(pts))[[sp]]
-  mean(idoneidad_pts <= idoneidad_uma[sp], na.rm = TRUE) * 100
-})
-
-round(percentil_uma, 1)
-```
-
-- `gsub(" ", "_", ...)` convierte `Canis latrans` en `Canis_latrans`, para que coincida con el nombre del mapa.
-- `pts` toma los puntos de presencia de cada especie (Paso 2).
-- `extract(...)` obtiene la idoneidad del mapa en cada uno de esos puntos.
-- `mean(idoneidad_pts <= idoneidad_uma[sp]) * 100` calcula qué porcentaje de esos puntos tiene una idoneidad igual o menor que la de la UMA.
-
-Un percentil de 80 significa que la UMA es más idónea que el 80% de los sitios donde se ha registrado la especie (un sitio muy favorable); un percentil de 20, que es un sitio climáticamente marginal para ella.
-
-### 6.4 Tabla final
-
+### 6.3 Tabla final
+ 
 Se junta todo en una tabla y se agrega la abundancia relativa publicada para la UMA (IAR; Plata-Pérez et al. 2024), solo como referencia.
-
+ 
 ```r
 tabla_uma <- data.frame(
   especie = especies,
   idoneidad_uma = round(idoneidad_uma, 3),
   idoneidad_buffer_5km = round(idoneidad_buffer, 3),
   umbral_p10 = resumen_maxent$umbral_p10,
-  uma_idonea = ifelse(as.logical(binario_uma), "Si", "No"),
-  percentil_presencias = round(percentil_uma, 1)
+  uma_idonea = ifelse(as.logical(binario_uma), "Si", "No")
 )
-
+ 
 iar <- data.frame(
   especie = c("Urocyon_cinereoargenteus", "Odocoileus_virginianus",
               "Canis_latrans", "Lynx_rufus", "Puma_concolor"),
   IAR = c(23.85, 7.22, 3.44, 2.34, 0.14)
 )
-
+ 
 tabla_uma <- merge(tabla_uma, iar, by = "especie")
 tabla_uma <- tabla_uma[order(-tabla_uma$IAR), ]
-
+ 
 tabla_uma
-
+ 
 write.csv(tabla_uma, "results/tables/03_idoneidad_uma.csv", row.names = FALSE)
 ```
-
+ 
 - `ifelse(...)` convierte `TRUE`/`FALSE` en "Si"/"No".
 - `merge(..., by = "especie")` une la tabla con el IAR por el nombre de la especie.
 - `order(-tabla_uma$IAR)` ordena de mayor a menor abundancia.
-
 **Resultado**
-
-| Especie | IAR (%) | Idoneidad (celda) | Idoneidad (5 km) | Umbral p10 | ¿Idónea? | Percentil |
-|---|---|---|---|---|---|---|
-| *U. cinereoargenteus* | 23.85 | 0.659 | 0.649 | 0.397 | Sí | 47.8 |
-| *O. virginianus* | 7.22 | 0.610 | 0.568 | 0.426 | Sí | 22.0 |
-| *C. latrans* | 3.44 | 0.616 | 0.612 | 0.416 | Sí | 35.0 |
-| *L. rufus* | 2.34 | 0.570 | 0.562 | 0.441 | Sí | 27.5 |
-| *P. concolor* | 0.14 | 0.530 | 0.504 | 0.383 | Sí | 15.8 |
-
+ 
+| Especie | IAR (%) | Idoneidad (celda) | Idoneidad (5 km) | Umbral p10 | ¿Idónea? |
+|---|---|---|---|---|---|
+| *U. cinereoargenteus* | 23.85 | 0.659 | 0.649 | 0.397 | Sí |
+| *O. virginianus* | 7.22 | 0.610 | 0.568 | 0.426 | Sí |
+| *C. latrans* | 3.44 | 0.616 | 0.612 | 0.416 | Sí |
+| *L. rufus* | 2.34 | 0.570 | 0.562 | 0.441 | Sí |
+| *P. concolor* | 0.14 | 0.530 | 0.504 | 0.383 | Sí |
+ 
 - La UMA es idónea para las cinco especies, como se esperaba, porque todas fueron registradas ahí por fototrampeo.
 - La idoneidad en la celda y en el radio de 5 km es casi igual (diferencias ≤ 0.04), así que el resultado no depende de la ubicación exacta del punto.
-- Todos los percentiles están por debajo de 50: para ninguna especie la UMA está entre sus sitios climáticamente más favorables.
-
+- La idoneidad en la UMA es intermedia para todas las especies (0.53–0.66), lejos de los valores máximos de sus mapas.
 **Salida:** `results/tables/03_idoneidad_uma.csv`.
-
+ 
 **Decisión**
-
-Como entre el 56% y el 74% de México es idóneo para cada especie (Paso 5.3), que la UMA sea idónea dice poco por sí solo. La comparación entre especies se basa en el **percentil**.
-
-La UMA resulta un sitio climáticamente típico para *U. cinereoargenteus* (percentil 47.8), poco favorable para *C. latrans*, *L. rufus* y *O. virginianus* (22.0–35.0) y marginal para *P. concolor* (15.8). Que ningún percentil supere 50 es coherente con el carácter semiárido y de transición de la zona (selva baja caducifolia y matorral xerófilo), donde ninguna de las cinco especies tiene el centro de su nicho climático. La marcada estacionalidad de las lluvias en la UMA (Plata-Pérez et al. 2024) coincide además con la preferencia de *U. cinereoargenteus* por lluvia muy estacional (BIO15; Paso 3.3).
-
-De forma descriptiva, los extremos coinciden con la abundancia relativa publicada: la especie para la que la UMA es más típica (*U. cinereoargenteus*) es la más abundante, y aquella para la que es más marginal (*P. concolor*), la menos abundante. *O. virginianus* es la excepción: es la segunda especie más abundante aunque la UMA le resulta poco favorable climáticamente, lo que puede explicarse porque la UMA se maneja para el aprovechamiento del venado y su abundancia depende más del manejo que del clima.
-
-Esta comparación es solo exploratoria: con cinco especies no es posible una prueba estadística, y los modelos de *C. latrans* y *U. cinereoargenteus* discriminan poco (Paso 4.2). Los percentiles se retoman en el objetivo 4, que evalúa la posición de la UMA en el espacio ambiental.
+ 
+Como entre el 56% y el 74% de México es idóneo para cada especie (Paso 5.3), que la UMA sea idónea dice poco por sí solo. La comparación entre especies se basa en la **idoneidad continua**.
+ 
+La idoneidad más alta en la UMA corresponde a *U. cinereoargenteus* (0.659) y la más baja a *P. concolor* (0.530); *C. latrans* y *O. virginianus* quedan casi empatados (0.616 y 0.610) y *L. rufus* en un punto intermedio (0.570). Que ninguna especie alcance valores altos es coherente con el carácter semiárido y de transición de la zona (selva baja caducifolia y matorral xerófilo). La marcada estacionalidad de las lluvias en la UMA (Plata-Pérez et al. 2024) coincide además con la preferencia de *U. cinereoargenteus* por lluvia muy estacional (BIO15; Paso 3.3).
+ 
+De forma descriptiva, los extremos coinciden con la abundancia relativa publicada: la especie con mayor idoneidad en la UMA (*U. cinereoargenteus*) es la más abundante, y la de menor idoneidad (*P. concolor*), la menos abundante. Esto concuerda con la idea de que la idoneidad de un modelo de nicho se relaciona con la abundancia local, aunque esa relación suele ser débil y variable (VanDerWal et al. 2009; Weber et al. 2017).
+ 
+Esta comparación es solo exploratoria: con cinco especies no es posible una prueba estadística, los modelos de *C. latrans* y *U. cinereoargenteus* discriminan poco (Paso 4.2), y la idoneidad de cada modelo tiene su propia escala, por lo que las diferencias pequeñas entre especies no deben interpretarse. La posición de la UMA dentro del nicho de cada especie se evalúa en el objetivo 4, en el espacio ambiental.
 
 ## Paso 7 - Figuras
-
+ 
 Se generan dos figuras de cinco paneles (uno por especie), con la UMA marcada en naranja. Los mapas se convierten a tabla larga con `melt()`, igual que el heatmap del objetivo 2, y el contorno de México se dibuja a partir de `geom(mexico)`.
-
+ 
 ```r
 mexico_lineas <- as.data.frame(geom(mexico))
-mexico_lineas$grupo <- paste(mexico_lineas$geom, mexico_lineas$part, 
+mexico_lineas$grupo <- paste(mexico_lineas$geom, mexico_lineas$part,
                              mexico_lineas$hole)
 ```
-
+ 
 - `geom(mexico)` extrae las coordenadas de los bordes de cada estado.
 - `grupo` identifica cada polígono, para que `ggplot()` no una con líneas los bordes de estados distintos.
 
 ### 7.1 Mapas de idoneidad
-
+ 
 ```r
 melted_mapas <- melt(
   as.data.frame(mapas, xy = TRUE, na.rm = TRUE),
@@ -774,9 +763,9 @@ melted_mapas <- melt(
   variable.name = "especie",
   value.name = "idoneidad"
 )
-
+ 
 melted_mapas$especie <- gsub("_", " ", melted_mapas$especie)
-
+ 
 fig_idoneidad <- ggplot() +
   geom_raster(data = melted_mapas, aes(x, y, fill = idoneidad)) +
   geom_path(data = mexico_lineas, aes(x, y, group = grupo),
@@ -790,13 +779,13 @@ fig_idoneidad <- ggplot() +
   labs(x = "Longitud", y = "Latitud") +
   theme_minimal() +
   theme(strip.text = element_text(face = "italic"))
-
+ 
 print(fig_idoneidad)
-
+ 
 ggsave("results/figures/03_mapas_idoneidad.png", plot = fig_idoneidad,
        width = 10, height = 6, dpi = 300)
 ```
-
+ 
 - `geom_raster()` dibuja la idoneidad de cada celda.
 - `geom_path()` dibuja los bordes estatales.
 - `geom_point()` marca la UMA.
@@ -804,9 +793,9 @@ ggsave("results/figures/03_mapas_idoneidad.png", plot = fig_idoneidad,
 - `coord_fixed()` mantiene la misma escala en ambos ejes, para que México no se vea deformado.
 
 ### 7.2 Mapas binarios
-
+ 
 Mismo procedimiento con los mapas del Paso 5.2. Los valores `TRUE`/`FALSE` se convierten en las categorías "Idoneo" y "No idoneo" con `factor()`.
-
+ 
 ```r
 melted_binarios <- melt(
   as.data.frame(binarios, xy = TRUE, na.rm = TRUE),
@@ -818,7 +807,7 @@ melted_binarios$especie <- gsub("_", " ", melted_binarios$especie)
 melted_binarios$idoneo <- factor(as.logical(melted_binarios$idoneo),
                                  levels = c(FALSE, TRUE),
                                  labels = c("No idoneo", "Idoneo"))
-
+ 
 fig_binarios <- ggplot() +
   geom_raster(data = melted_binarios, aes(x, y, fill = idoneo)) +
   geom_path(data = mexico_lineas, aes(x, y, group = grupo),
@@ -832,15 +821,63 @@ fig_binarios <- ggplot() +
   labs(x = "Longitud", y = "Latitud") +
   theme_minimal() +
   theme(strip.text = element_text(face = "italic"))
-
+ 
 print(fig_binarios)
-
+ 
 ggsave("results/figures/03_mapas_binarios.png", plot = fig_binarios,
        width = 10, height = 6, dpi = 300)
 ```
-
+ 
 **Resultado**
-
+ 
 `03_mapas_idoneidad.png` muestra la idoneidad continua de cada especie y `03_mapas_binarios.png`, la clasificación idóneo/no idóneo con el umbral p10. En ambas figuras la UMA aparece en el sur de Puebla y cae en zona idónea para las cinco especies.
-
+ 
 **Salidas:** `results/figures/03_mapas_idoneidad.png` y `results/figures/03_mapas_binarios.png`.
+ 
+### Registro de resultados
+ 
+| Especie | Celdas únicas | AUC prueba (± DE) | Variable principal (permutación) | % de México idóneo | Idoneidad en la UMA | IAR (%) |
+|---|---|---|---|---|---|---|
+| *U. cinereoargenteus* | 1,203 | 0.671 ± 0.025 | BIO6 | 74.2 | 0.659 | 23.85 |
+| *O. virginianus* | 1,183 | 0.701 ± 0.022 | BIO12 | 64.0 | 0.610 | 7.22 |
+| *C. latrans* | 1,060 | 0.661 ± 0.025 | BIO5 | 70.7 | 0.616 | 3.44 |
+| *L. rufus* | 541 | 0.732 ± 0.030 | BIO6 | 56.4 | 0.570 | 2.34 |
+| *P. concolor* | 377 | 0.746 ± 0.040 | BIO12 | 56.8 | 0.530 | 0.14 |
+ 
+## Estructura resultante
+ 
+```
+04-maxent/
+├── capas_asc/        # BIO5.asc, BIO6.asc, BIO12.asc, BIO15.asc, BIO17.asc
+├── presence/         # presencias_5spp.csv
+└── results/          # salidas de Maxent: réplicas, _avg.asc, .html, maxentResults.csv, maxent.log, plots/
+03-analisis-uma-rstudio/results/
+├── figures/          # 03_variables_seleccionadas.png; 03_mapas_idoneidad.png; 03_mapas_binarios.png
+└── tables/           # 03_registros_maxent.csv; 03_desempeno_maxent.csv; 03_contribucion_variables.csv;
+                      # 03_importancia_permutacion.csv; 03_area_idonea.csv; 03_idoneidad_uma.csv
+```
+ 
+## Limitaciones
+ 
+- **Área accesible (M):** se usó todo México para las cinco especies. Lo ideal sería delimitar M a la provincia biogeográfica de cada especie (Soberón y Peterson 2005; Barve et al. 2011); usar el país completo reduce el AUC de las especies generalistas y amplía su área idónea.
+- **Desempeño de los modelos:** *C. latrans* y *U. cinereoargenteus* tienen un AUC de prueba menor a 0.7, por lo que su idoneidad discrimina poco entre sitios. El AUC tiende a ser bajo en especies de distribución amplia (Lobo et al. 2008). No se calculó la ROC parcial (Peterson et al. 2008), recomendada como complemento del AUC.
+- **Sesgo de muestreo:** los registros de GBIF se concentran en sitios muy muestreados (hasta 56% de los registros de *O. virginianus* comparten celda), y Maxent puede confundir "más muestreado" con "más idóneo". No se usó capa de sesgo.
+- **Variación entre corridas:** con réplicas, Maxent usa una semilla aleatoria distinta en cada ejecución, así que repetir el análisis da valores ligeramente diferentes. La variación entre réplicas se reporta con la desviación estándar.
+- **Escala de la UMA:** la idoneidad de la UMA resume el clima de una celda de ~4.5 km (o de un radio de 5 km), no el de cada sitio de fototrampeo.
+- **Idoneidad ≠ abundancia:** la idoneidad de un modelo de nicho se relaciona con el límite superior de la abundancia más que con la abundancia observada, y esa relación suele ser débil (VanDerWal et al. 2009; Weber et al. 2017). Además, cada modelo tiene su propia escala de idoneidad, por lo que la comparación entre especies y con el IAR es solo descriptiva (n = 5 especies).
+- **Métodos complementarios:** el umbral del percentil 10 (Pearson et al. 2007) y la importancia por permutación no se vieron en la práctica de clase; se usaron para clasificar los mapas y para interpretar variables correlacionadas.
+
+## Referencias
+ 
+> Verificar volumen y páginas antes de la entrega.
+ 
+- Barve, N., et al. (2011). The crucial role of the accessible area in ecological niche modeling and species distribution modeling. *Ecological Modelling*, 222, 1810–1819.
+- Lobo, J. M., Jiménez-Valverde, A., & Real, R. (2008). AUC: a misleading measure of the performance of predictive distribution models. *Global Ecology and Biogeography*, 17, 145–151.
+- Pearson, R. G., et al. (2007). Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. *Journal of Biogeography*, 34, 102–117.
+- Peterson, A. T., Papeş, M., & Soberón, J. (2008). Rethinking receiver operating characteristic analysis applications in ecological niche modeling. *Ecological Modelling*, 213, 63–72.
+- Phillips, S. J., Dudík, M., & Schapire, R. E. Maxent software for modeling species niches and distributions (Version 3.4.4). http://biodiversityinformatics.amnh.org/open_source/maxent/
+- Phillips, S. J., et al. (2017). Opening the black box: an open-source release of Maxent. *Ecography*, 40, 887–893.
+- Plata-Pérez, F. X., et al. (2024). Descubriendo los patrones de actividad del ciervo *Odocoileus virginianus* (Artiodactyla: Cervidae) y sus depredadores en la Región Árida de México. *Revista de Biología Tropical*, 72, e55515.
+- Soberón, J., & Peterson, A. T. (2005). Interpretation of models of fundamental ecological niches and species' distributional areas. *Biodiversity Informatics*, 2, 1–10.
+- VanDerWal, J., et al. (2009). Abundance and the environmental niche: environmental suitability estimated from niche models predicts the upper limit of local abundance. *The American Naturalist*, 174, 282–291.
+- Weber, M. M., et al. (2017). Is there a correlation between abundance and environmental suitability derived from ecological niche modelling? A meta-analysis. *Ecography*, 40, 817–828.
