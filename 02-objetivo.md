@@ -4,13 +4,12 @@ Los modelos de nicho (objetivos 3 a 5) describen el nicho climático de cada esp
 
 Este objetivo reduce las 19 variables a un subconjunto pequeño y **no redundante**, que represente las principales dimensiones del clima de México.
 
-```
 ## Flujo de trabajo
 
 | Paso | Qué se hace | Dónde | Origen en el curso |
 |---|---|---|---|
 | 0 | Preparar R | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
-| 1 | Descargar WorldClim | Navegador | Práctica de GBIF y Maxent (Q) |
+| 1 | Verificar las capas de WorldClim (descargadas en el objetivo 1) | Explorador de archivos | Práctica de GBIF y Maxent (Q) |
 | 2 | Crear la máscara de México | QGIS | Mismo flujo del objetivo 1 |
 | 3 | Cargar las capas | R | Práctica 1, *Espacio geográfico y espacio ecológico* (V) |
 | 4 | Recortar a México | R | Práctica 1 (V) |
@@ -19,7 +18,6 @@ Este objetivo reduce las 19 variables a un subconjunto pequeño y **no redundant
 | 7 | Correlación de Spearman | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
 | 8 | Análisis de Componentes Principales (PCA) | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
 | 9 | Selección final de variables | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
-```
 
 A continuación se explican los pasos necesarios para el cumplimiento del objetivo:
 
@@ -47,17 +45,16 @@ library(factoextra)
 library(psych)
 ```
 
-### 0.2 Directorio de trabajo*
+### 0.2 Directorio de trabajo
 
-Todas las rutas de esta guía son **relativas a la carpeta raíz del repositorio***, hay que indicarle a R que trabaje desde ahí.
+Todas las rutas de esta guía son **relativas a la carpeta del proyecto de RStudio** (`03-analisis-uma-rstudio`), así que hay que indicarle a R que trabaje desde ahí.
 
 ```r
 getwd()   # muestra en qué carpeta está trabajando R
 
-setwd("C:/analisis_uma/03-analisis-uma-rstudio")   # cambiar por la ruta real; usar / y no \
 ```
 
-*En RStudio también se puede hacer desde **Session > Set Working Directory > Choose Directory…**
+En RStudio también se puede hacer desde **Session > Set Working Directory > Choose Directory…**, o abriendo directamente el archivo `03-analisis-uma-rstudio.Rproj`, que ya fija esa carpeta.
 
 ### 0.3 Carpetas de resultados
 
@@ -214,7 +211,7 @@ dim(bios_mx_extract)
 
 **Resultado** 
 
-102, 2316 filas y 21 columnas (`x`, `y` y las 19 variables).
+102,316 filas y 21 columnas (`x`, `y` y las 19 variables).
 
 ### 5.2 Tomar una muestra aleatoria
 
@@ -496,7 +493,7 @@ print(pca_importance[1:4])
 
 **Decisión**
 
-Confirma las variables candidatas del Paso 8.4: en cada grupo, BIO6 (PC1), BIO5 (PC2), BIO17 (PC3) y BIO15 (PC4, también aparece en PC3) tienen la mayor carga dentro de su respectivo grupo. Se mantiene la selección: **BIO5, BIO6, BIO12, BIO15, BIO17**.
+Confirma las variables candidatas del Paso 8.4: BIO6 y BIO12 empatan como las de mayor carga en PC1 (0.30), BIO5 tiene la mayor carga en PC2 (−0.46), BIO17 la mayor carga positiva en PC3 (0.41) y BIO15 la mayor en PC4 (0.50; también aparece en PC3). Se mantiene la selección: BIO5, BIO6, BIO12, BIO15, BIO17.
 
 ## Paso 9 - Selección final de variables
 
@@ -540,14 +537,14 @@ Ningún par supera el umbral de referencia (|ρ| > 0.8); la correlación más al
 
 **Decisión**
 
-Se confirma el conjunto final, sin necesidad de sustituciones: **BIO5** (temperatura máxima del mes más cálido), **BIO6** (temperatura mínima del mes más frío), **BIO12** (precipitación anual), **BIO15** (estacionalidad de la precipitación) y **BIO17** (precipitación del trimestre más seco). Las correlaciones moderadas entre BIO6–BIO12 (0.58), BIO12–BIO17 (0.57) y BIO15–BIO17 (-0.55) son esperables —reflejan el mismo patrón de invierno frío-seco visto desde variables distintas— y no alcanzan el umbral fijado para considerarse redundancia.
+Se confirma el conjunto final, sin necesidad de sustituciones: **BIO5** (temperatura máxima del mes más cálido), **BIO6** (temperatura mínima del mes más frío), **BIO12** (precipitación anual), **BIO15** (estacionalidad de la precipitación) y **BIO17** (precipitación del trimestre más seco). Las correlaciones moderadas entre BIO6–BIO12 (0.58), BIO12–BIO17 (0.57) y BIO15–BIO17 (−0.55) son esperables: en México, los sitios más lluviosos suelen tener inviernos más templados y una temporada seca menos marcada. Ninguna alcanza el umbral fijado para considerarse redundancia (|ρ| > 0.8).
 
-Las cinco especies registradas en la UMA (*Odocoileus virginianus*, *Urocyon cinereoargenteus*, *Canis latrans*, *Lynx rufus* y *Puma concolor*) son mamíferos de tamaño medio a grande sin adaptaciones fisiológicas extremas al calor o la sequía, por lo que su distribución y actividad dependen principalmente de dos factores: el estrés térmico directo y la disponibilidad de agua y forraje/presas en la temporada seca.
+Las cinco especies registradas en la UMA (*Odocoileus virginianus*, *Urocyon cinereoargenteus*, *Canis latrans*, *Lynx rufus* y *Puma concolor*) son mamíferos de tamaño medio a grande. Para describir su nicho climático se eligieron variables que representan dos factores relevantes en una zona semiárida: los extremos de temperatura y la disponibilidad de agua, sobre todo en la temporada seca.
 
-- **BIO5 y BIO6** capturan el estrés térmico directo. El venado cola blanca y sus depredadores regulan su actividad conductualmente frente a temperaturas extremas (p. ej., mayor actividad crepuscular/nocturna en los meses más calurosos), y el frío invernal limita el gasto energético disponible para forrajeo y reproducción. Estos extremos son más informativos para el nicho fisiológico que una temperatura media anual, que diluye ambos eventos.
-- **BIO12, BIO15 y BIO17** capturan la disponibilidad de agua y, de forma indirecta, de forraje. En la Mixteca Poblana, la vegetación y por tanto la presa base (venado) dependen de la duración e intensidad de la temporada seca; esto repercute en cascada sobre los depredadores (coyote, zorra gris, gato montés, puma), cuya abundancia relativa publicada (IAR) varía entre especies posiblemente en relación con su tolerancia a esta limitación estacional de recursos.
+- **BIO5 y BIO6** representan los extremos térmicos del año (el mes más caluroso y el más frío). Se prefirieron a la temperatura media anual (BIO1), que combina ambos extremos en un solo valor.
+- **BIO12, BIO15 y BIO17** representan la disponibilidad de agua: cuánta lluvia cae en el año, qué tan concentrada está en pocos meses y cuánta cae en la temporada seca. En la Mixteca Poblana, la vegetación depende de la duración e intensidad de la temporada seca, lo que puede afectar la disponibilidad de agua, forraje y presas para las cinco especies.
 
-Se excluyó deliberadamente el eje de **rango/estacionalidad térmica** (BIO4, BIO7), identificado como sub-bloque independiente en el Paso 7. Aunque estadísticamente no redundante con BIO5/BIO6, su interpretación fisiológica es menos directa para este grupo de mamíferos homeotermos de tamaño medio-grande, que responden más claramente a los extremos absolutos de temperatura y a la disponibilidad hídrica que a la amplitud del rango térmico en sí. Esta decisión prioriza la interpretabilidad biológica del modelo final sobre la exhaustividad estadística.
+Se excluyó el eje de **rango y estacionalidad térmica** (BIO4, BIO7), identificado como bloque independiente en el Paso 7. Aunque no es redundante con BIO5 y BIO6, se dio prioridad a los extremos absolutos de temperatura, cuya interpretación es más directa, y a un conjunto final pequeño. Esta decisión prioriza la interpretabilidad biológica sobre la exhaustividad estadística.
 
 ### Registro de resultados
 
