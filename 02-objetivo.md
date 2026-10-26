@@ -4,7 +4,17 @@ Los modelos de nicho (objetivos 3 a 5) describen el nicho climático de cada esp
 
 Este objetivo reduce las 19 variables a un subconjunto pequeño y **no redundante**, que represente las principales dimensiones del clima de México.
 
-## Flujo de trabajo
+La selección combina tres criterios, y cada uno responde una pregunta distinta:
+ 
+| Criterio | Pregunta que responde | Paso |
+|---|---|---|
+| **Correlación de Spearman** | ¿Qué pares de variables son redundantes? Se basa en rangos, así que no supone relaciones lineales ni normalidad, algo útil con variables climáticas que suelen tener distribuciones sesgadas | 7 |
+| **PCA** | ¿El conjunto elegido cubre las principales dimensiones del clima de México? | 8 |
+| **Criterio biológico** | Dentro de cada grupo de variables redundantes, ¿cuál tiene una interpretación más directa para mamíferos de una zona semiárida, donde los extremos de temperatura y el agua de la temporada seca limitan a la fauna? | 9 |
+ 
+En resumen: **Spearman decide qué variables son redundantes, el criterio biológico elige una por grupo y el PCA comprueba que el conjunto final cubra el clima de México.**
+
+## Flujo de trabajo BORRAR
 
 | Paso | Qué se hace | Dónde | Origen en el curso |
 |---|---|---|---|
@@ -215,7 +225,7 @@ dim(bios_mx_extract)
 
 ### 5.2 Tomar una muestra aleatoria
 
-Trabajar con todas las celdas hace lento el análisis sin cambiar el resultado. Se toma una muestra aleatoria de **10,000 celdas** con la función `sample_df()` de la Práctica 1: si la tabla tiene menos de 10,000 filas la deja igual; si tiene más, elige 10,000 al azar.
+Se toma una muestra aleatoria de **10,000 celdas** con la función `sample_df()` de la Práctica 1: si la tabla tiene menos de 10,000 filas la deja igual; si tiene más, elige 10,000 al azar.
 
 `set.seed(123)` fija el punto de partida del generador aleatorio, para que la muestra sea **siempre la misma** cada vez que se corre el código (reproducibilidad).
 
@@ -240,13 +250,14 @@ dim(clima)
 
 > **¿Por qué celdas de todo México y no los puntos de las especies?** La correlación entrevariables describe cómo se relacionan en el territorio de estudio.
 > Usar el mismo conjunto de celdas para todas garantiza que las cinco especies compartan las mismas variables, requisito para comparar sus nichos en los
-> objetivos 4 y 5.
+> *objetivos 4 y 5.*
 
 ## Paso 6 - Seleccionar y escalar las variables
 
 Primero se separan las 19 variables bioclimáticas de las coordenadas (`x`, `y`), que no son variables ambientales. Se seleccionan **por nombre** y no por posición, para evitar incluir una columna equivocada.
 
 Después, `scale()` transforma cada variable a **valores Z** (media 0 y desviación estándar 1). Es necesario porque las variables tienen unidades y rangos muy distintos: la temperatura está en °C (decenas) y la precipitación en mm (cientos o miles). Sin escalar, las variables con números más grandes dominarían el PCA.
+>(Para Spearman el escalado no cambia nada, porque se basa en rangos)
 
 ```r
 clima_variables <- clima[, names(bios)]
@@ -300,7 +311,9 @@ upper_tri <- get_upper_tri(cor_clima_2dec)
 
 ### 7.3 Graficar el heatmap
 
-`melt()` convierte la matriz en una tabla larga (una fila por par de variables), el formato que necesita `ggplot()`. `na.rm = TRUE` elimina las celdas vacías del triángulo inferior.
+`melt()` convierte la matriz en una tabla larga (una fila por par de variables), el formato que necesita `ggplot()`. 
+
+`na.rm = TRUE` elimina las celdas vacías del triángulo inferior.
 
 ```r
 melted_tri_cor_clima <- melt(upper_tri, na.rm = TRUE)
@@ -337,13 +350,18 @@ BIO2, BIO3, BIO15 y BIO19 no se agrupan con fuerza (|ρ| < 0.8) dentro de ningú
 
 Un dato clave para el Paso 9: aunque el heatmap agrupa visualmente 1a y 1b como un solo bloque de "temperatura", **BIO5 (1b) y BIO6 (1a) solo correlacionan 0.29 entre sí** — no son redundantes. Lo mismo ocurre entre 2a y 2b: **BIO12 (2a) y BIO17 (2b) correlacionan 0.57**, por debajo del umbral de 0.8. Esto es lo que permite seleccionar más adelante una variable de cada sub-bloque sin violar el criterio de redundancia.
 
-**Cómo leerlo:** los cuadros azul oscuro indican correlación positiva fuerte y los azul claro, negativa; los blancos, sin relación. Los **bloques oscuros** son grupos de variables redundantes.
+**Cómo leerlo:** 
+- los cuadros azul oscuro indican correlación positiva fuerte,
+- los azul claro, negativa,
+- los blancos, sin relación.
+
+Los **bloques oscuros** son grupos de variables redundantes.
 
 **Salidas:** `results/figures/02_heatmap_spearman.png` y `results/tables/02_matriz_spearman.csv`.
 
 **Decisión**
 
-El heatmap no elige variables por sí solo; identifica **qué variables son redundantes entre sí**, y la matriz numérica afina esa identificación a nivel de sub-bloque. Esta información se usa en el Paso 9 para elegir una variable por cada sub-bloque no redundante, apoyándose en las cargas del PCA (Paso 8) para decidir cuál dentro de cada uno.
+El heatmap no elige variables por sí solo; identifica **qué variables son redundantes entre sí**, y la matriz numérica afina esa identificación a nivel de sub-bloque. En el Paso 9 se elige una variable por sub-bloque con el criterio biológico, y el PCA (Paso 8) comprueba que el conjunto final cubra las principales dimensiones del clima.
 
 ## Paso 8 - Análisis de Componentes Principales (PCA)
 
@@ -417,11 +435,11 @@ ggsave("results/figures/02_biplot.png", plot = biplot,
        width = 8, height = 6, dpi = 300)
 ```
 
-`label = "var"` muestra solo el nombre de las variables; con 10,000 celdas, las etiquetas de los puntos taparían la gráfica.
+`label = "var"` muestra solo el nombre de las variables; con 10,000 celdas.
 
 **Decisión**
 
-Este plot es solo ilustrativo y **no se usa para tomar la decisión final**, porque solo representa el 69.80% de la varianza (PC1+PC2) y con 4 componentes relevantes deja fuera información importante. La selección real se basa en la tabla de cargas (Paso 8.4).
+Este plot es solo ilustrativo y **no se usa para tomar la decisión final**, porque solo representa el 69.80% de la varianza (PC1+PC2) y con 4 componentes relevantes deja fuera información importante. **La selección real se basa en la tabla de cargas (Paso 8.4).**
 
 ### 8.4 Cargas de las variables
 
@@ -461,14 +479,14 @@ write.csv(round(pca_loadings, 3), "results/tables/02_cargas_pca.csv")
 
 **Decisión**
 
-Se interpreta cada componente por sus mayores cargas:
+Las cargas indican qué dimensión del clima resume cada componente:
 
-- **PC1** (gradiente húmedo-templado vs. seco-continental): BIO12 y BIO6 con mayor carga.
-- **PC2** (calor): BIO5 con la mayor carga (-0.46).
-- **PC3** (lluvia en temporada seca): BIO17 con la mayor carga positiva (0.41).
-- **PC4** (concentración de lluvia): BIO15 con la mayor carga (0.50).
+- **PC1** (gradiente húmedo-templado frente a seco-continental): precipitación anual y de la temporada húmeda (BIO12, BIO13, BIO16) y temperaturas de invierno (BIO6, BIO11), todas con cargas cercanas a 0.30.
+- **PC2** (calor): BIO5 (−0.46), BIO10 (−0.45) y BIO8 (−0.40).
+- **PC3** (lluvia de la temporada seca): BIO17 (0.41), BIO14 (0.40) y BIO19 (0.39), con BIO15 en sentido opuesto (−0.42).
+- **PC4** (concentración de la lluvia): BIO15 (0.50) y BIO18 (0.42).
 
-Variables candidatas, una por componente: **BIO5, BIO6, BIO12, BIO15, BIO17**.
+Dentro de cada componente, varias variables tienen cargas casi iguales (por ejemplo, BIO5 −0.46 y BIO10 −0.45 en PC2), así que **las cargas no bastan para elegir una variable**. El PCA se usa para comprobar que el conjunto final cubra los cuatro componentes interpretados; la elección dentro de cada bloque de Spearman se hace con el criterio biológico del Paso 9.
 
 ### 8.5 Variables importantes por componente
 
@@ -493,18 +511,18 @@ print(pca_importance[1:4])
 
 **Decisión**
 
-Confirma las variables candidatas del Paso 8.4: BIO6 y BIO12 empatan como las de mayor carga en PC1 (0.30), BIO5 tiene la mayor carga en PC2 (−0.46), BIO17 la mayor carga positiva en PC3 (0.41) y BIO15 la mayor en PC4 (0.50; también aparece en PC3). Se mantiene la selección: BIO5, BIO6, BIO12, BIO15, BIO17.
+Esta tabla sirve como lista de comprobación para el Paso 9: un conjunto final que cubra el clima de México debe incluir al menos una variable importante de cada uno de los cuatro componentes.
 
 ## Paso 9 - Selección final de variables
 
 Igual que en el ejercicio de clase, se eligen variables que representen **grupos no redundantes** según la correlación y el PCA.
 
 **Criterios**
-
-1. En el heatmap, identificar los **bloques** de variables muy correlacionadas entre sí (como referencia, |ρ| > 0.8).
-2. Elegir **una variable por bloque**, preferentemente la que tenga mayor carga en los primeros componentes del PCA.
-3. Procurar que el conjunto final combine variables de **temperatura** y de **precipitación**, y de ser posible alguna de **estacionalidad**.
-4. Preferir variables con sentido biológico claro para mamíferos de zonas semiáridas (por ejemplo, extremos de temperatura o precipitación de la temporada seca).
+ 
+1. **Redundancia (Spearman, Paso 7):** identificar los **bloques** de variables muy correlacionadas entre sí (como referencia, |ρ| > 0.8, umbral usado en la práctica de Q).
+2. **Una variable por bloque, elegida por criterio biológico:** como las cargas dentro de cada bloque están casi empatadas, se prefieren las variables con interpretación más directa para mamíferos de una zona semiárida: los **extremos** de temperatura (BIO5, BIO6) sobre los promedios (BIO1, BIO10, BIO11), y los **totales o trimestres** de precipitación (BIO12, BIO17) sobre los meses sueltos (BIO13, BIO14).
+3. **Cobertura (PCA, Paso 8):** comprobar que el conjunto final tenga al menos una variable importante (|carga| > 0.3) en cada uno de los cuatro componentes interpretados.
+4. **Balance:** procurar que el conjunto combine variables de **temperatura**, de **precipitación** y, de ser posible, alguna de **estacionalidad**.
 
 **Código**
 
@@ -520,9 +538,19 @@ write.csv(data.frame(variable = variables_seleccionadas),
 ```
 
 **Resultado**
-
-A partir de las cargas del PCA (Paso 8.4–8.5), se preseleccionó una variable por cada uno de los 4 componentes interpretados: BIO6 y BIO12 (PC1), BIO5 (PC2), BIO17 (PC3) y BIO15 (PC4). La matriz de correlación de Spearman entre estas 5 variables fue:
-
+ 
+Aplicando los criterios a los bloques del Paso 7:
+ 
+| Bloque | Variable elegida | Componente donde pesa (carga) |
+|---|---|---|
+| 1a (frío / media anual) | BIO6 | PC1 (0.30) |
+| 1b (calor) | BIO5 | PC2 (−0.46) |
+| 2a (temporada húmeda) | BIO12 | PC1 (0.30) |
+| 2b (temporada seca) | BIO17 | PC3 (0.41) |
+| Sin bloque | BIO15 | PC4 (0.50) y PC3 (−0.42) |
+ 
+El conjunto cubre los cuatro componentes interpretados (91.82% de la varianza). La matriz de correlación de Spearman entre las 5 variables fue:
+ 
 |       | BIO5  | BIO6  | BIO12 | BIO15 | BIO17 |
 |-------|-------|-------|-------|-------|-------|
 | BIO5  |  1.00 |  0.29 | -0.20 | -0.06 | -0.17 |
@@ -530,40 +558,39 @@ A partir de las cargas del PCA (Paso 8.4–8.5), se preseleccionó una variable 
 | BIO12 | -0.20 |  0.58 |  1.00 |  0.12 |  0.57 |
 | BIO15 | -0.06 | -0.06 |  0.12 |  1.00 | -0.55 |
 | BIO17 | -0.17 |  0.17 |  0.57 | -0.55 |  1.00 |
-
+ 
 Ningún par supera el umbral de referencia (|ρ| > 0.8); la correlación más alta es BIO6–BIO12 (ρ = 0.58).
-
+ 
 **Salida:** `results/tables/02_variables_seleccionadas.csv`, que se usará en los objetivos 3 a 5.
 
 **Decisión**
-
-Se confirma el conjunto final, sin necesidad de sustituciones: **BIO5** (temperatura máxima del mes más cálido), **BIO6** (temperatura mínima del mes más frío), **BIO12** (precipitación anual), **BIO15** (estacionalidad de la precipitación) y **BIO17** (precipitación del trimestre más seco). Las correlaciones moderadas entre BIO6–BIO12 (0.58), BIO12–BIO17 (0.57) y BIO15–BIO17 (−0.55) son esperables: en México, los sitios más lluviosos suelen tener inviernos más templados y una temporada seca menos marcada. Ninguna alcanza el umbral fijado para considerarse redundancia (|ρ| > 0.8).
-
+ 
+Se confirma el conjunto final: **BIO5** (temperatura máxima del mes más cálido), **BIO6** (temperatura mínima del mes más frío), **BIO12** (precipitación anual), **BIO15** (estacionalidad de la precipitación) y **BIO17** (precipitación del trimestre más seco). Las correlaciones moderadas entre BIO6–BIO12 (0.58), BIO12–BIO17 (0.57) y BIO15–BIO17 (−0.55) son esperables: en México, los sitios más lluviosos suelen tener inviernos más templados y una temporada seca menos marcada. Ninguna alcanza el umbral fijado para considerarse redundancia (|ρ| > 0.8).
+ 
 Las cinco especies registradas en la UMA (*Odocoileus virginianus*, *Urocyon cinereoargenteus*, *Canis latrans*, *Lynx rufus* y *Puma concolor*) son mamíferos de tamaño medio a grande. Para describir su nicho climático se eligieron variables que representan dos factores relevantes en una zona semiárida: los extremos de temperatura y la disponibilidad de agua, sobre todo en la temporada seca.
-
+ 
 - **BIO5 y BIO6** representan los extremos térmicos del año (el mes más caluroso y el más frío). Se prefirieron a la temperatura media anual (BIO1), que combina ambos extremos en un solo valor.
-- **BIO12, BIO15 y BIO17** representan la disponibilidad de agua: cuánta lluvia cae en el año, qué tan concentrada está en pocos meses y cuánta cae en la temporada seca. En la Mixteca Poblana, la vegetación depende de la duración e intensidad de la temporada seca, lo que puede afectar la disponibilidad de agua, forraje y presas para las cinco especies.
-
+- **BIO12, BIO15 y BIO17** representan la disponibilidad de agua: cuánta lluvia cae en el año, qué tan concentrada está en pocos meses y cuánta cae en la temporada seca. En zonas semiáridas, el acceso al agua limita la distribución de la fauna, sobre todo en la temporada seca (Harris et al., 2015); en el norte de Sonora, la mayoría de las especies de mamíferos registradas, entre ellas *O. virginianus* y *P. concolor*, se asociaron con sitios con agua disponible (Ragan et al., 2023).
 Se excluyó el eje de **rango y estacionalidad térmica** (BIO4, BIO7), identificado como bloque independiente en el Paso 7. Aunque no es redundante con BIO5 y BIO6, se dio prioridad a los extremos absolutos de temperatura, cuya interpretación es más directa, y a un conjunto final pequeño. Esta decisión prioriza la interpretabilidad biológica sobre la exhaustividad estadística.
-
+ 
 ### Registro de resultados
-
+ 
 | Variables iniciales | Varianza explicada por PC1 + PC2 | Variables seleccionadas | Justificación |
 |---|---|---|---|
-| 19 | 69.80% | BIO5, BIO6, BIO12, BIO15, BIO17 | Una variable por bloque de correlación (Paso 7), con mayor carga en su componente del PCA (Paso 8.4–8.5); \|ρ\| ≤ 0.58 entre todas las seleccionadas (Paso 9); sentido fisiológico para mamíferos semiáridos (estrés térmico y disponibilidad hídrica) |
-
+| 19 | 69.80% | BIO5, BIO6, BIO12, BIO15, BIO17 | Una variable por bloque de correlación de Spearman (Paso 7), elegida por criterio biológico (extremos térmicos y agua de la temporada seca); el conjunto cubre los cuatro componentes interpretados del PCA (Paso 8; 91.82% de la varianza); \|ρ\| ≤ 0.58 entre todas las seleccionadas (Paso 9) |
+ 
 ## Estructura resultante
-
+ 
 ```
 00-data-worldclim/            # 19 .tif de WorldClim
-00-data-map-mex/destdv1gw.shp    # máscara de México
+00-data-map-mex/destdv1gw.shp # máscara de México
 03-analisis-uma-rstudio/results/
-├── figures/                  # 02_heatmap_spearman.png; 02_screen_plot.png; 02_biplot.png
+├── figures/                  # 02_recorte_mexico_bio1.png; 02_heatmap_spearman.png; 02_screen_plot.png; 02_biplot.png
 └── tables/                   # 02_matriz_spearman.csv; 02_cargas_pca.csv; 02_variables_seleccionadas.csv
 ```
-
+ 
 ## Limitaciones
-
+ 
 - **Resolución:** 2.5 min (~4.5 km) describe el clima a escala nacional; es más gruesa que la UMA.
 - **Periodo climático:** WorldClim resume 1970–2000, mientras que los registros de presencia van de
   1980 a 2020 (ver objetivo 1).
@@ -571,3 +598,10 @@ Se excluyó el eje de **rango y estacionalidad térmica** (BIO4, BIO7), identifi
   que la muestra sea siempre la misma.
 - **Selección:** la elección final combina criterios estadísticos y biológicos, por lo que se
   documenta su justificación en el registro de resultados.
+## Referencias
+ 
+- CONABIO. (s. f.). *División política estatal, escala 1:1,000,000* (`destdv1gw`) [Capa vectorial]. Geoportal del Sistema Nacional de Información sobre Biodiversidad. http://geoportal.conabio.gob.mx/metadatos/doc/html/destdv1gw.html
+- Fick, S. E., & Hijmans, R. J. (2017). WorldClim 2: new 1-km spatial resolution climate surfaces for global land areas. *International Journal of Climatology*, 37(12), 4302–4315. https://doi.org/10.1002/joc.5086
+- Harris, G., Sanderson, J. G., Erz, J., Lehnen, S. E., & Butler, M. J. (2015). Weather and prey predict mammals' visitation to water. *PLOS ONE*, 10(11), e0141355. https://doi.org/10.1371/journal.pone.0141355
+- R Core Team. (2024). *R: A language and environment for statistical computing* (versión 4.4.0) [Software]. R Foundation for Statistical Computing. https://www.R-project.org/
+- Ragan, K., Schipper, J., Bateman, H. L., & Hall, S. J. (2023). Mammal use of riparian corridors in semi-arid Sonora, Mexico. *The Journal of Wildlife Management*, 87(1), e22322. https://doi.org/10.1002/jwmg.22322
