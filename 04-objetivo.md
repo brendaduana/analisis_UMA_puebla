@@ -11,9 +11,9 @@ Se sigue la Práctica 2.1 de V (análisis OMI, *Outlying Mean Index*; Dolédec e
 | **OMI** (posición) | Qué tan lejos está el clima promedio que usa la especie del clima promedio de toda el área de estudio. Valores altos = nicho **marginal**; valores bajos = nicho **central** (condiciones comunes) |
 | **Tol** (amplitud) | Qué tan variado es el clima que ocupa la especie. Valores altos = **generalista** (nicho amplio); valores bajos = **especialista** (nicho estrecho) |
 
-Con eso se ponen a prueba, de forma exploratoria, las dos hipótesis de V sobre abundancia: la **hipótesis de la amplitud del nicho** (Brown 1984) y la **hipótesis de la posición del nicho** o de disponibilidad de hábitat (Venier y Fahrig 1996), que esperan mayor abundancia en especies generalistas y de nicho central, respectivamente. La abundancia es el IAR publicado por Plata-Pérez et al. (2024).
+Con estos parámetros se exploran, de forma descriptiva, dos hipótesis vistas con V sobre la abundancia. La hipótesis de la amplitud del nicho (Brown, 1984) espera mayor abundancia en especies generalistas. La hipótesis de la posición del nicho o de disponibilidad de hábitat (Venier y Fahrig, 1996) la espera en especies de nicho central. No es una prueba estadística: con cinco especies solo se revisa si el patrón va en la dirección que predice cada una. La abundancia es el IAR publicado por Plata-Pérez et al. (2024).
 
-En el objetivo 3 se midió la idoneidad del clima de la UMA **en el espacio geográfico**; aquí se mide su **posición en el espacio ambiental**. Son preguntas relacionadas pero distintas: Maxent estima una idoneidad relativa a todo México, mientras que este objetivo describe qué tan típico es el clima de la UMA para el nicho de cada especie.
+En el objetivo 3 se midió la idoneidad del clima de la UMA en el espacio geográfico; aquí se mide su posición en el espacio ambiental. Son preguntas relacionadas pero distintas: Maxent estima una idoneidad relativa a todo México, con una escala propia para cada especie, mientras que este objetivo mide a todas las especies en el mismo espacio ambiental y describe qué tan típico es el clima de la UMA para el nicho de cada una.
 
 ## Flujo de trabajo
 
@@ -261,7 +261,7 @@ Se responden las preguntas de la práctica de V:
 - **Amplitud:** *L. rufus* es la especie más especialista (Tol 0.80) y *P. concolor* la más generalista (2.66); *O. virginianus* queda en segundo lugar (1.52). *C. latrans* y *U. cinereoargenteus* son casi iguales (1.21 y 1.20), por lo que no se interpreta su diferencia.
 - Esto es coherente con las curvas de respuesta del objetivo 3: *L. rufus*, con la idoneidad más restringida a climas secos y templados, es la más especialista.
 
-Como `Tol` solo usa 2 ejes, la dispersión total de cada especie es `Tol + Rtol`. Con esa medida los extremos no cambian (*L. rufus* la más estrecha, 3.62; *P. concolor* la más amplia, 6.16), pero *U. cinereoargenteus* (5.01) pasa por encima de *C. latrans* (4.18). Se mantiene `Tol`, que es el parámetro de la práctica de V.
+Como `Tol` solo usa 2 ejes, la dispersión total de cada especie es `Tol + Rtol`. Con esa medida los extremos no cambian (*L. rufus* la más estrecha, 3.62; *P. concolor* la más amplia, 6.16), pero *U. cinereoargenteus* (5.01) pasa por encima de *C. latrans* (4.18). Se mantiene `Tol`.
 
 ## Paso 5 - Posición de la UMA en el espacio de la PCA
 
@@ -483,10 +483,11 @@ cor(tabla_nicho$percentil_uma, tabla_nicho$IAR, method = "spearman")
 
 **Decisión**
 
-- **Posición:** el orden de las especies por OMI y por percentil de la UMA es el mismo (de más central a más marginal: *U. cinereoargenteus*, *O. virginianus*, *C. latrans*, *P. concolor*, *L. rufus*) y coincide casi por completo con el orden del IAR; solo se intercambian *L. rufus* y *P. concolor*. Las correlaciones son negativas (−0.90), en la dirección que predice la hipótesis de la posición del nicho.
-- **Amplitud:** la correlación de Tol con el IAR es débil y negativa (−0.30), por lo que estos datos no apoyan la hipótesis de la amplitud del nicho. *P. concolor* es la más generalista y la menos abundante, aunque su IAR (0.14%) viene de solo 2 registros.
-- **Con la idoneidad de Maxent (objetivo 3):** la zorra gris es la más favorable en ambos análisis (idoneidad más alta y UMA más central). En los extremos opuestos, Maxent marca al puma como la especie con menor idoneidad en la UMA, mientras que el percentil marca al gato montés como la de posición más marginal.
-- Con 5 especies, ni una correlación de −0.90 alcanza significancia (p ≈ 0.08), así que el resultado es un patrón descriptivo y no una prueba de las hipótesis.
+Decisión
+
+Posición: el orden de las especies por OMI y por percentil de la UMA es el mismo (de más central a más marginal: U. cinereoargenteus, O. virginianus, C. latrans, P. concolor, L. rufus) y coincide casi por completo con el orden del IAR; solo se intercambian L. rufus y P. concolor. Las correlaciones son negativas (−0.90), en la dirección que predice la hipótesis de la posición del nicho. OMI y percentil ordenan igual a las especies, así que son un solo resultado medido de dos formas, no dos confirmaciones independientes.
+Amplitud: la amplitud no acompaña a la abundancia. La hipótesis de Brown esperaría que las especies más generalistas fueran las más abundantes, pero P. concolor es la más generalista (Tol 2.66) y la menos abundante, y U. cinereoargenteus, la más abundante, tiene una amplitud intermedia. Por eso la correlación es débil y en dirección contraria a la predicha (ρ = −0.30), y estos datos no apoyan la hipótesis de la amplitud del nicho. Este resultado depende casi solo del puma: sin él, la correlación de las otras cuatro especies sería positiva (ρ = 0.40), aunque con cuatro especies eso no tiene peso. Además, el IAR del puma (0.14%) viene de solo 2 registros, y un depredador tope suele vivir en densidades bajas por sus requerimientos de presas y territorio, aunque tolere muchos climas; esto último es una explicación posible que este proyecto no pone a prueba.
+Con 5 especies, ni una correlación de −0.90 alcanza significancia (p = 0.083), así que el resultado es un patrón descriptivo y no una prueba de las hipótesis.
 
 ## Paso 7 - Figuras
 
@@ -566,49 +567,43 @@ ggsave("results/figures/04_distancia_uma.png", plot = fig_distancias,
 
 - Las especies se ordenan de mayor a menor IAR. La barra es la distancia de la UMA al centro del nicho y el rombo, el límite del 95% de los registros de esa especie: si la barra queda por debajo del rombo, la UMA está dentro del 95% de los registros.
 
-**Resultado**
+Resultado
 
-`04_nicho_omi.png`: los centros del nicho de las cinco especies quedan agrupados cerca del origen, en una zona pequeña del espacio climático de México. *C. latrans* y *L. rufus* quedan hacia el lado seco del Eje 1 (derecha), *P. concolor* y *O. virginianus* hacia el lado húmedo (izquierda), y *U. cinereoargenteus* es la más cercana al origen. *P. concolor* tiene el punto más grande (mayor tolerancia) y *L. rufus* el más pequeño. La UMA (naranja, sin etiqueta) queda a la derecha del origen, justo encima de *C. latrans* (misma posición en el Eje 1, algo más cálida en el Eje 2). Las flechas muestran las tres dimensiones del paso 3: BIO12 y BIO17 apuntan a la izquierda (húmedo), BIO5 hacia arriba (calor) y BIO15 hacia la derecha.
+04_nicho_omi.png: los centros del nicho de las cinco especies quedan agrupados cerca del origen, en una zona pequeña del espacio climático de México. C. latrans y L. rufus quedan hacia el lado seco del Eje 1 (derecha), P. concolor y O. virginianus hacia el lado húmedo (izquierda), y U. cinereoargenteus es la más cercana al origen. P. concolor tiene el punto más grande (mayor tolerancia) y L. rufus el más pequeño. La UMA (naranja, sin etiqueta) queda a la derecha del origen, justo encima de C. latrans (misma posición en el Eje 1, algo más cálida en el Eje 2). Las flechas muestran las tres dimensiones del paso 3: BIO12 y BIO17 apuntan a la izquierda (húmedo), BIO5 hacia arriba (calor) y BIO15 hacia la derecha.
 
-`04_distancia_uma.png`: en las cinco especies la barra queda muy por debajo del rombo (distancia de la UMA entre 1.12 y 1.56; límite del 95% entre 3.05 y 4.55). *P. concolor* tiene la barra más alta y el rombo más alto; *L. rufus*, el rombo más bajo.
+04_distancia_uma.png: en las cinco especies la barra queda muy por debajo del rombo (distancia de la UMA entre 1.12 y 1.56; límite del 95% entre 3.05 y 4.55). P. concolor tiene la barra más alta y el rombo más alto; L. rufus, el rombo más bajo.
 
-**Salidas:** `results/figures/04_nicho_omi.png` y `results/figures/04_distancia_uma.png`.
+Salidas: results/figures/04_nicho_omi.png y results/figures/04_distancia_uma.png.
 
-## Decisión
-
-- **La UMA ocupa una posición central en el nicho climático de las cinco especies:** queda dentro del 95% de sus registros y más cerca del centro que el 79% al 93% de ellos. Es esperable, porque las especies se eligieron por haberse registrado ahí.
-- **La posición del nicho sigue el orden del IAR** (ρ = −0.90 para OMI y para el percentil de la UMA), salvo el cambio entre *L. rufus* y *P. concolor*. La zorra gris, la más abundante, es también la de nicho más central y la UMA queda más cerca de su centro.
-- **La amplitud del nicho no sigue el IAR** (ρ = −0.30): *P. concolor* es la más generalista y la menos abundante, pero su IAR depende de 2 registros.
-- **Alcance:** con 5 especies, los resultados son descriptivos y no una prueba de las hipótesis de V (p ≈ 0.08 incluso para ρ = −0.90).
-
-## Estructura resultante
-
-```
+Decisión
+La UMA ocupa una posición central en el nicho climático de las cinco especies: queda dentro del 95% de sus registros y más cerca del centro que el 79% al 93% de ellos. Es esperable, porque las especies se eligieron por haberse registrado ahí.
+La posición del nicho sigue el orden del IAR (ρ = −0.90 para OMI y para el percentil de la UMA), salvo el cambio entre L. rufus y P. concolor. La zorra gris, la más abundante, es también la de nicho más central y la UMA queda más cerca de su centro.
+La amplitud del nicho no acompaña al IAR (ρ = −0.30): P. concolor es la más generalista y la menos abundante, aunque su IAR depende de 2 registros.
+Alcance: con 5 especies, los resultados son descriptivos y no una prueba de las hipótesis de V (p = 0.083 incluso para ρ = −0.90).
+Estructura resultante
 03-analisis-uma-rstudio/results/
 ├── figures/          # 04_nicho_omi.png; 04_distancia_uma.png
 └── tables/           # 04_parametros_nicho.csv; 04_clima_uma.csv; 04_posicion_uma.csv;
                       # 04_nicho_vs_iar.csv
-```
-
-## Limitaciones
-
-- **Área de estudio (M):** el OMI mide la posición respecto al clima promedio de México. Una especie que vive también fuera de México (como *C. latrans* o *P. concolor*) puede parecer más marginal o más estrecha de lo que es en toda su distribución (Soberón y Peterson 2005; Barve et al. 2011).
-- **Presencias, no abundancias:** en la práctica de V, la tabla de especies tiene abundancias por sitio; aquí solo hay presencia (1) o sin registro (0) por celda, a partir de GBIF. Los 0 no son ausencias (paso 2.3).
-- **Sesgo de muestreo:** los registros de GBIF se concentran en sitios muy muestreados, lo que puede desplazar el centro del nicho hacia el clima de esos sitios. Se conserva una presencia por celda, pero no se corrige el sesgo.
-- **Amplitud en 2 ejes:** `Tol` solo mide la dispersión en los 2 ejes que conserva `niche()` (valor predeterminado de la práctica); el resto queda en `Rtol` (paso 4). Los extremos (*L. rufus* estrecho, *P. concolor* amplio) no cambian con la dispersión total, pero sí el orden de especies con valores casi iguales.
-- **El IAR es una referencia frágil:** el artículo de Plata-Pérez et al. (2024) reporta valores ligeramente distintos según la sección (por ejemplo, 6.06%, 7.2% y 7.22% para el venado); aquí se usan los de su Tabla 1. El IAR del puma (0.14%) no aparece en esa tabla y se basa en solo 2 registros, y los registros de zorra gris se concentran en pocas cámaras.
-- **Posición no es abundancia:** el IAR es una abundancia relativa de una sola localidad, medida con 22 cámaras en 2018-2020, mientras que el clima es el promedio de 1970-2000. Las correlaciones del paso 6.2 son solo descriptivas (n = 5).
-- **Las especies se eligieron por estar en la UMA:** que la UMA caiga dentro del nicho de todas es esperable y no es un resultado independiente.
-- **Solo clima:** el nicho se describe con 5 variables bioclimáticas. Cobertura vegetal, presas, competidores y presión humana (como cacería) también influyen en la abundancia local.
-- **Paso propio:** la distancia euclidiana de la UMA al centro del nicho (paso 5) no está en la práctica de V; es una extensión simple del mismo espacio de la PCA. Los elipsoides de nicho (Práctica 4 de V) se usan en el objetivo 5.
-
-## Referencias
-
-- Barve, N., Barve, V., Jiménez-Valverde, A., Lira-Noriega, A., Maher, S. P., Peterson, A. T., Soberón, J., & Villalobos, F. (2011). The crucial role of the accessible area in ecological niche modeling and species distribution modeling. *Ecological Modelling*, 222(11), 1810–1819. https://doi.org/10.1016/j.ecolmodel.2011.02.011
-- Brown, J. H. (1984). On the relationship between abundance and distribution of species. *The American Naturalist*, 124(2), 255–279. https://doi.org/10.1086/284267
-- Dolédec, S., Chessel, D., & Gimaret-Carpentier, C. (2000). Niche separation in community analysis: a new method. *Ecology*, 81(10), 2914–2927. https://doi.org/10.1890/0012-9658(2000)081[2914:NSICAA]2.0.CO;2
-- Dray, S., & Dufour, A.-B. (2007). The ade4 package: implementing the duality diagram for ecologists. *Journal of Statistical Software*, 22(4), 1–20. https://doi.org/10.18637/jss.v022.i04
-- Karasiewicz, S., Dolédec, S., & Lefebvre, S. (2017). Within outlying mean indexes: refining the OMI analysis for the realized niche decomposition. *PeerJ*, 5, e3364. https://doi.org/10.7717/peerj.3364
-- Plata-Pérez, F. X., Urbina-Flores, D. P., Duana Hernández, B., Villarreal-Espino-Barros, O. A., Gloria-Trujillo, A., & Mendoza-Martínez, G. D. (2024). Unveiling activity patterns of the deer *Odocoileus virginianus* (Artiodactyla: Cervidae) and its predators in Mexico's Arid Region. *Revista de Biología Tropical*, 72, e55515. https://doi.org/10.15517/rev.biol.trop..v72i1.55515
-- Soberón, J., & Peterson, A. T. (2005). Interpretation of models of fundamental ecological niches and species' distributional areas. *Biodiversity Informatics*, 2, 1–10. https://doi.org/10.17161/bi.v2i0.4
-- Venier, L. A., & Fahrig, L. (1996). Habitat availability causes the species abundance-distribution relationship. *Oikos*, 76(3), 564–570. https://doi.org/10.2307/3546349
+Limitaciones
+Área de estudio (M): el OMI mide la posición respecto al clima promedio de México, el mismo fondo para las cinco especies (Qiao et al., 2017). Una especie que vive también fuera de México (como C. latrans o P. concolor) puede parecer más marginal o más estrecha de lo que es en toda su distribución.
+Presencias, no abundancias: en la práctica de V, la tabla de especies tiene abundancias por sitio; aquí solo hay presencia (1) o sin registro (0) por celda, a partir de GBIF. Los 0 no son ausencias (paso 2.3).
+Escala de la hipótesis: las hipótesis de la posición y la amplitud del nicho relacionan el nicho con la abundancia en muchos sitios de una región; aquí la abundancia es el IAR de una sola localidad, que funciona solo como aproximación.
+Sesgo de muestreo: los registros de GBIF se concentran en sitios muy muestreados, lo que puede desplazar el centro del nicho hacia el clima de esos sitios. Se conserva una presencia por celda, pero no se corrige el sesgo.
+Amplitud en 2 ejes: Tol solo mide la dispersión en los 2 ejes que conserva niche() (valor predeterminado de la práctica); el resto queda en Rtol (paso 4). Los extremos (L. rufus estrecho, P. concolor amplio) no cambian con la dispersión total, pero sí el orden de especies con valores casi iguales.
+Marginalidad sin prueba de significancia: no se probó si el OMI de cada especie es mayor que el esperado al azar; se comparan solo los valores entre especies.
+El IAR es una referencia frágil: el artículo de Plata-Pérez et al. (2024) reporta valores ligeramente distintos según la sección (por ejemplo, 6.06%, 7.2% y 7.22% para el venado); aquí se usan los de su Tabla 1. El IAR del puma (0.14%) no aparece en esa tabla y se basa en solo 2 registros, y los registros de zorra gris se concentran en pocas cámaras.
+Posición no es abundancia: el IAR es una abundancia relativa medida con 22 cámaras en 2018–2020, mientras que el clima es el promedio de 1970–2000. Las correlaciones del paso 6.2 son solo descriptivas (n = 5).
+Las especies se eligieron por estar en la UMA: que la UMA caiga dentro del nicho de todas es esperable y no es un resultado independiente.
+Solo clima: el nicho se describe con 5 variables bioclimáticas. Cobertura vegetal, presas, competidores y presión humana (como cacería) también influyen en la abundancia local.
+Distancia de la UMA al centroide: la distancia euclidiana del paso 5 se basa en el concepto de distancia al centroide del nicho visto en clase, aplicado al mismo espacio de la PCA del análisis OMI. Los elipsoides de nicho (Práctica 4 de V) se usan en el objetivo 5.
+Referencias
+Brown, J. H. (1984). On the relationship between abundance and distribution of species. The American Naturalist, 124(2), 255–279. https://doi.org/10.1086/284267
+Dolédec, S., Chessel, D., & Gimaret-Carpentier, C. (2000). Niche separation in community analysis: a new method. Ecology, 81(10), 2914–2927. https://doi.org/10.1890/0012-9658(2000)081[2914:NSICAA]2.0.CO;2
+Dray, S., & Dufour, A.-B. (2007). The ade4 package: implementing the duality diagram for ecologists. Journal of Statistical Software, 22(4), 1–20. https://doi.org/10.18637/jss.v022.i04
+Hutchinson, G. E. (1957). Concluding remarks. Cold Spring Harbor Symposia on Quantitative Biology, 22, 415–427. https://doi.org/10.1101/SQB.1957.022.01.039
+Karasiewicz, S., Dolédec, S., & Lefebvre, S. (2017). Within outlying mean indexes: refining the OMI analysis for the realized niche decomposition. PeerJ, 5, e3364. https://doi.org/10.7717/peerj.3364
+Lira-Noriega, A., & Manthey, J. D. (2014). Relationship of genetic diversity and niche centrality: a survey and analysis. Evolution, 68(4), 1082–1093. https://doi.org/10.1111/evo.12343
+Plata-Pérez, F. X., Urbina-Flores, D. P., Duana Hernández, B., Villarreal-Espino-Barros, O. A., Gloria-Trujillo, A., & Mendoza-Martínez, G. D. (2024). Unveiling activity patterns of the deer Odocoileus virginianus (Artiodactyla: Cervidae) and its predators in Mexico's Arid Region. Revista de Biología Tropical, 72, e55515. https://doi.org/10.15517/rev.biol.trop..v72i1.55515
+Qiao, H., Escobar, L. E., Saupe, E. E., Ji, L., & Soberón, J. (2017). Accessible areas in ecological niche comparisons of invasive species: Recognized but still overlooked. Scientific Reports, 7, 1213. https://doi.org/10.1038/s41598-017-01313-2
+Venier, L. A., & Fahrig, L. (1996). Habitat availability causes the species abundance-distribution relationship. Oikos, 76(3), 564–570. https://doi.org/10.2307/3546349
