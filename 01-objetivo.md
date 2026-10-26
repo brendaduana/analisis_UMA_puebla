@@ -80,7 +80,7 @@ Repetir este paso una vez por especie.
 | `0009791-lynx-rufus.csv` | *Lynx rufus* | 1 014 | 1 | 1 013 |
 | `0009794-puma-concolor.csv` | *Puma concolor* | 591 | 0 | 591 |
 
-Estos cinco archivos CSV son la entrada de registros para Maxent.
+En total quedan 7,958 registros. Estos cinco archivos CSV son la entrada de registros para Maxent.
 
 ## 5. Descarga de WorldClim
 
@@ -110,3 +110,9 @@ Por último, realiza los siguientes pasos:
 - **Sesgo espacial:** aunque se eliminaron duplicados exactos, los registros pueden seguir agrupados cerca de ciudades, carreteras o áreas protegidas. En los objetivos 3 a 5 se conservó una sola presencia por celda de las capas climáticas (~4.5 km), lo que reduce la agrupación a esa escala, pero no se aplicó un adelgazamiento espacial a una distancia mayor ni se corrigió el sesgo de muestreo.
 - **Calidad de los registros:** no se filtraron los registros por tipo (`basisOfRecord`, por ejemplo, observación humana frente a ejemplar de museo) ni por incertidumbre de las coordenadas (`coordinateUncertaintyInMeters`). Solo se eliminaron registros sin coordenadas, duplicados y puntos claramente erróneos en QGIS.
 - **Área geográfica:** los registros se limitan a México. Las cinco especies también viven fuera del país, por lo que el nicho estimado corresponde solo a la parte mexicana de su distribución.
+
+## Referencias
+ 
+- Fick, S. E., & Hijmans, R. J. (2017). WorldClim 2: new 1-km spatial resolution climate surfaces for global land areas. *International Journal of Climatology*, 37(12), 4302–4315. https://doi.org/10.1002/joc.5086
+- GBIF.org (2026). Occurrence Download. https://doi.org/10.15468/dl.568fu5, https://doi.org/10.15468/dl.caw6rb, https://doi.org/10.15468/dl.6vw73h, https://doi.org/10.15468/dl.27d2vx, https://doi.org/10.15468/dl.6r3hc5
+- QGIS Development Team. (s. f.). *QGIS Geographic Information System* [Software]. Open Source Geospatial Foundation. https://qgis.org
