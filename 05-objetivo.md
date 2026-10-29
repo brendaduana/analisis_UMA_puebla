@@ -4,9 +4,9 @@ Con las presencias (objetivo 1), las cinco variables (objetivo 2), los modelos d
 
 **¿Qué tanto se traslapa el nicho climático del venado cola blanca con el de su depredador, el coyote, y con el de la zorra gris, la especie más abundante en la UMA?**
 
-Se sigue la Práctica 4 de V (paquete `ellipsenm`): se ajusta un **elipsoide de nicho** a los registros de cada especie en el espacio ambiental y se calcula el traslape entre elipsoides, con prueba de significancia. La práctica compara dos regiones de una misma especie; aquí se comparan dos especies en la misma área (México). El resto del flujo es el mismo.
+Se sigue la Práctica 4 (paquete `ellipsenm`): se ajusta un **elipsoide de nicho** a los registros de cada especie en el espacio ambiental y se calcula el traslape entre elipsoides, con prueba de significancia. La práctica compara dos regiones de una misma especie; aquí se comparan dos especies en la misma área (México). El resto del flujo es el mismo.
 
-| Práctica de V | Este análisis |
+| Práctica | Este análisis |
 |---|---|
 | Ocurrencias de la región 1 y de la región 2 | Presencias del venado y de cada especie comparada |
 | `vars1`, `vars2` (variables de cada región) | Las mismas 5 capas climáticas de México (el fondo es común) |
