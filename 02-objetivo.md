@@ -18,16 +18,16 @@ En resumen: **Spearman decide qué variables son redundantes, el criterio bioló
 
 | Paso | Qué se hace | Dónde | Origen en el curso |
 |---|---|---|---|
-| 0 | Preparar R | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
-| 1 | Verificar las capas de WorldClim (descargadas en el objetivo 1) | Explorador de archivos | Práctica de GBIF y Maxent (Q) |
+| 0 | Preparar R | R | *Ejercicios sobre Análisis Estadístico en R* |
+| 1 | Verificar las capas de WorldClim (descargadas en el objetivo 1) | Explorador de archivos | Práctica de GBIF y Maxent |
 | 2 | Crear la máscara de México | QGIS | Mismo flujo del objetivo 1 |
-| 3 | Cargar las capas | R | Práctica 1, *Espacio geográfico y espacio ecológico* (V) |
-| 4 | Recortar a México | R | Práctica 1 (V) |
-| 5 | Extraer valores y muestrear 10,000 celdas | R | Práctica 1 (V) |
-| 6 | Escalar las variables | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
-| 7 | Correlación de Spearman | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
-| 8 | Análisis de Componentes Principales (PCA) | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
-| 9 | Selección final de variables | R | *Ejercicios sobre Análisis Estadístico en R* (Q) |
+| 3 | Cargar las capas | R | Práctica 1, *Espacio geográfico y espacio ecológico* |
+| 4 | Recortar a México | R | Práctica 1 |
+| 5 | Extraer valores y muestrear 10,000 celdas | R | Práctica 1 |
+| 6 | Escalar las variables | R | *Ejercicios sobre Análisis Estadístico en R* |
+| 7 | Correlación de Spearman | R | *Ejercicios sobre Análisis Estadístico en R* |
+| 8 | Análisis de Componentes Principales (PCA) | R | *Ejercicios sobre Análisis Estadístico en R* |
+| 9 | Selección final de variables | R | *Ejercicios sobre Análisis Estadístico en R* |
 
 A continuación se explican los pasos necesarios para el cumplimiento del objetivo:
 
