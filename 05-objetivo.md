@@ -14,7 +14,9 @@ Se sigue la Práctica 4 (paquete `ellipsenm`): se ajusta un **elipsoide de nicho
 | `ellipsoid_overlap()` con `back_union` y prueba de significancia | Igual |
 | `plot_overlap()` | Igual |
 
-Los dos pares se eligen porque el venado es la presa y la especie central del antecedente (Plata-Pérez et al. 2024), el coyote es un depredador del venado, y la zorra gris es la especie más abundante en la UMA. Se mide **solo el traslape climático**; no se evalúan interacciones entre especies.
+Que las tres especies compartan el mismo fondo es importante: una comparación de nichos solo es válida si se hace dentro de los mismos ambientes disponibles o accesibles, porque de lo contrario las diferencias en el clima disponible podrían confundirse con diferencias de nicho (Qiao et al., 2017). Al usar las mismas capas de México para las tres especies, esa condición se cumple.
+
+Los dos pares se eligen porque el venado es la presa y la especie central del antecedente (Plata-Pérez et al., 2024), el coyote es un depredador del venado, y la zorra gris es la especie más abundante en la UMA. Se mide **solo el traslape climático**; no se evalúan interacciones entre especies.
 
 ## Flujo de trabajo
 
@@ -39,7 +41,7 @@ dir.create("results/figures", recursive = TRUE, showWarnings = FALSE)
 dir.create("results/tables", recursive = TRUE, showWarnings = FALSE)
 ```
 
-- `ellipsenm` es el paquete de la Práctica 4 de V. La versión usada aquí es la 0.3.5.
+- `ellipsenm` es el paquete de la Práctica 4 de V. La versión usada aquí es la 0.3.5 instalada desde Github
 
 ## Paso 1 - Capas y presencias
 
@@ -70,7 +72,12 @@ zorra  <- presencias_u[presencias_u$species == "Urocyon cinereoargenteus", ]
 
 **Resultado**
 
-Las celdas únicas son las mismas del objetivo 4: 1,060 (*C. latrans*), 541 (*L. rufus*), 1,183 (*O. virginianus*), 378 (*P. concolor*) y 1,203 (*U. cinereoargenteus*). Solo se usan tres de las cinco especies.
+Las celdas únicas son las mismas del objetivo 4: 
+* 1,060 (*C. latrans*),
+* 541 (*L. rufus*),
+* 1,183 (*O. virginianus*), 378 (*P. concolor*) y
+* 1,203 (*U. cinereoargenteus*).
+** Solo se usan tres de las cinco especies.**
 
 ## Paso 2 - Un elipsoide de nicho por especie
 
@@ -182,6 +189,8 @@ En los dos pares el traslape observado es **menor que en las 100 repeticiones al
 - **Venado–coyote:** diferencia clara. El traslape observado (0.80) queda muy por debajo de todo el rango aleatorio (≥ 0.96).
 - **Venado–zorra gris:** diferencia **estadísticamente significativa pero pequeña**. El traslape observado (0.955) queda apenas por debajo del valor mínimo aleatorio (0.957). En términos prácticos, los nichos climáticos del venado y la zorra son muy parecidos.
 
+> ¿Por qué una diferencia tan pequeña sale significativa? Con más de 1,100 registros por especie, la prueba detecta diferencias mínimas. Por eso, para interpretar el resultado importa más la **magnitud** del traslape (0.80 contra 0.955) que el valor de p.
+
 ## Paso 5 - Tabla resumen
 
 ```r
@@ -206,7 +215,7 @@ tabla_traslape
 write.csv(tabla_traslape, "results/tables/05_traslape_nichos.csv", row.names = FALSE)
 ```
 
-- `p` es la proporción de repeticiones aleatorias con un traslape igual o menor que el observado, sumando 1 a numerador y denominador para que nunca sea 0.
+- p es la proporción de repeticiones aleatorias con un traslape igual o menor que el observado, sumando 1 a numerador y denominador para que nunca sea 0. Como ninguna de las 100 repeticiones alcanzó el traslape observado, p = (0 + 1) / (100 + 1) = 0.0099, que se redondea a 0.01. Este es el valor más bajo posible con 100 repeticiones: con 1,000 repeticiones saldría 0.001 con los mismos datos, así que el número refleja cuántas repeticiones se hicieron y no la fuerza de la diferencia.
 
 **Resultado**
 
@@ -245,8 +254,9 @@ rgl::snapshot3d("results/figures/05_traslape_venado_zorra.png")
 ## Decisión
 
 - **El nicho climático del venado se traslapa mucho más con el de la zorra gris que con el del coyote** (traslape con fondo de 0.955 contra 0.801; traslape completo de 0.682 contra 0.353).
-- **La diferencia con el coyote es clara y se debe al invierno y a la lluvia:** el coyote ocupa climas más secos y de invierno más frío (BIO12 ≈ 521 mm y BIO6 ≈ 4.9 °C, contra ≈ 828 mm y 8.0 °C del venado). Esto coincide con la posición de su nicho en el objetivo 4. Para referencia, el clima de la UMA (BIO12 ≈ 494 mm) está más cerca del centro del coyote que del venado en esta variable.
+- **La diferencia con el coyote es clara y se debe al invierno y a la lluvia:** el coyote ocupa climas más secos y de invierno más frío (BIO12 ≈ 521 mm y BIO6 ≈ 4.9 °C, contra ≈ 828 mm y 8.0 °C del venado). Esto coincide con la posición de su nicho en el objetivo 4. Para referencia, el clima de la UMA (BIO12 ≈ 494 mm) está más cerca del centro del coyote que del venado en esta variable, y cerca del límite seco que tolera el venado según su curva de respuesta (objetivo 3).
 - **Con la zorra, los nichos son casi iguales:** la diferencia es significativa pero pequeña.
+- **En ambos pares**, el traslape observado fue menor que en las 100 comparaciones aleatorias (p ≈ 0.01, el mínimo posible con 100 repeticiones); la magnitud del traslape es lo que distingue a los dos pares.
 - **Alcance:** es solo traslape **climático**. Que dos nichos se traslapen en clima no implica que las especies interactúen o compitan; eso depende del uso de hábitat y del tiempo, que no se evalúan aquí.
 
 ## Estructura resultante
@@ -262,8 +272,8 @@ rgl::snapshot3d("results/figures/05_traslape_venado_zorra.png")
 - **Elipsoides muy grandes respecto al clima de México:** los elipsoides al 95% cubren casi todo el clima del país, por lo que el traslape con fondo es alto en cualquier comparación (la media aleatoria es 0.98). Por eso importa más comparar contra la distribución aleatoria que el valor absoluto del traslape.
 - **Traslape completo con valores imposibles:** los puntos simulados dentro del elipsoide incluyen valores que no existen (precipitaciones negativas), lo que baja el traslape completo. Se prefiere la medida con fondo.
 - **Pocas repeticiones:** con 100 repeticiones, el menor p posible es 0.01. Más repeticiones darían un p más fino, pero con el mismo resultado cualitativo (ninguna repetición alcanzó el traslape observado).
-- **Elipsoide con variación entre corridas:** el elipsoide de volumen mínimo se estima con un procedimiento aleatorio, por lo que el elipsoide del venado cambia ligeramente entre las dos comparaciones (volumen de 3.72 × 10⁹ en la comparación con el coyote y de 3.76 × 10⁹ con la zorra; menos de 1% de diferencia). No se fijó la semilla antes del paso 2, así que una nueva ejecución puede dar cifras ligeramente distintas.
-- **Área de estudio (M):** el fondo es todo México, como en los objetivos 3 y 4. Especies que viven también fuera de México (como *C. latrans*) tienen un nicho parcialmente muestreado (Soberón y Peterson 2005; Barve et al. 2011).
+- **Elipsoide con variación entre corridas** 
+- **Área de estudio (M):** el fondo es todo México, como en los objetivos 3 y 4, lo que permite comparar las especies con el mismo clima disponible (Qiao et al., 2017). Especies que viven también fuera de México (como *C. latrans*) tienen solo una parte de su nicho representada.
 - **Presencias de GBIF:** los registros se concentran en sitios muy muestreados y no se corrigió el sesgo de muestreo.
 - **Solo tres especies y solo clima:** se comparan solo dos pares, y el nicho se describe con 5 variables bioclimáticas; vegetación, presas y presión humana no se consideran.
 - **Gráfico en 3 de 5 variables:** `plot_overlap()` solo muestra BIO5, BIO6 y BIO12. El traslape se calcula con las cinco variables.
@@ -271,7 +281,6 @@ rgl::snapshot3d("results/figures/05_traslape_venado_zorra.png")
 
 ## Referencias
 
-- Barve, N., Barve, V., Jiménez-Valverde, A., Lira-Noriega, A., Maher, S. P., Peterson, A. T., Soberón, J., & Villalobos, F. (2011). The crucial role of the accessible area in ecological niche modeling and species distribution modeling. *Ecological Modelling*, 222(11), 1810–1819. https://doi.org/10.1016/j.ecolmodel.2011.02.011
-- Cobos, M. E., Osorio-Olvera, L., Soberón, J., Peterson, A. T., Barve, V., & Barve, N. *ellipsenm: Ecological niche characterization using ellipsoids*. Paquete de R. https://github.com/marlonecobos/ellipsenm
+- Cobos, M. E., Osorio-Olvera, L., Soberón, J., Peterson, A. T., Barve, V., & Barve, N. (2019). *ellipsenm: Ecological niche characterization using ellipsoids* (versión 0.3.5) [Paquete de R]. https://github.com/marlonecobos/ellipsenm
 - Plata-Pérez, F. X., Urbina-Flores, D. P., Duana Hernández, B., Villarreal-Espino-Barros, O. A., Gloria-Trujillo, A., & Mendoza-Martínez, G. D. (2024). Unveiling activity patterns of the deer *Odocoileus virginianus* (Artiodactyla: Cervidae) and its predators in Mexico's Arid Region. *Revista de Biología Tropical*, 72, e55515. https://doi.org/10.15517/rev.biol.trop..v72i1.55515
-- Soberón, J., & Peterson, A. T. (2005). Interpretation of models of fundamental ecological niches and species' distributional areas. *Biodiversity Informatics*, 2, 1–10. https://doi.org/10.17161/bi.v2i0.4
+- Qiao, H., Escobar, L. E., Saupe, E. E., Ji, L., & Soberón, J. (2017). Accessible areas in ecological niche comparisons of invasive species: Recognized but still overlooked. *Scientific Reports*, 7, 1213. https://doi.org/10.1038/s41598-017-01313-2
