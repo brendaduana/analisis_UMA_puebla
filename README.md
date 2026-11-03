@@ -6,9 +6,9 @@ Proyecto final del curso **Bases ecológicas y genómicas de la interacción org
 ## Contexto
 
 Mi tesis de maestría se desarrolla en esta misma UMA y compara la detección de mamíferos terrestres
-por fototrampeo y por metabarcoding de ADN ambiental. Es una zona semiárida con orografía accidentada,
+por fototrampeo y por metabarcoding de DNA ambiental. Es una zona semiárida con orografía accidentada,
 marcada estacionalidad hídrica y vegetación de matorral xerófilo y bosque caducifolio (INEGI, 2022).
-En ambientes así, el acceso al agua limita la distribución de la fauna, sobre todo en la temporada
+En este tipo de ambientes, el acceso al agua limita la distribución de la fauna, sobre todo en la temporada
 seca, cuando los mamíferos se concentran en menos sitios con agua (Harris et al., 2015). En el norte
 de Sonora, 17 de 21 especies de mamíferos, entre ellas *O. virginianus* y *P. concolor*, se asociaron
 con sitios con agua disponible (Ragan et al., 2023).
@@ -51,7 +51,7 @@ sus limitaciones. Cada script contiene el código que se ejecutó para ese objet
 
 ## Resultados principales
 
-Los resultados son **exploratorios**: se trabaja con cinco especies, una sola localidad y datos de
+Los resultados son **EXPLORATORIOS**: se trabaja con cinco especies, una sola localidad y datos de
 presencia de GBIF, por lo que las relaciones con la abundancia no se interpretan como prueba de
 hipótesis.
 
@@ -60,7 +60,7 @@ hipótesis.
 | 1 | 7,958 registros tras quitar duplicados y puntos erróneos (591 a 2,681 por especie). |
 | 2 | Cinco variables: BIO5, BIO6, BIO12, BIO15 y BIO17 (\|ρ\| ≤ 0.58 entre ellas), que representan los extremos de temperatura y la disponibilidad de agua. |
 | 3 | La UMA es idónea para las cinco especies según el umbral del percentil 10, con idoneidad intermedia (0.53–0.66). Como entre el 56% y el 74% de México resulta idóneo para cada especie, este resultado por sí solo dice poco. |
-| 4 | El clima de la UMA queda en la parte central del nicho de las cinco especies (más cerca del centro que el 79% a 93% de los registros de cada una). El orden de las especies por posición del nicho coincide con el del IAR salvo por el gato montés y el puma (ρ = −0.90; p = 0.083; n = 5). La amplitud del nicho no acompaña al IAR (ρ = −0.30): el puma es la especie más generalista y la más rara. |
+| 4 | El clima de la UMA queda en la parte central del nicho de las cinco especies (más cerca del centro que el 79% a 93% de los registros de cada una). El orden de las especies por posición del nicho coincide con el del IAR salvo por el gato montés y el puma (ρ = −0.90; p = 0.083; n = 5). La amplitud del nicho no acompaña al IAR (ρ = −0.30): el puma es la especie "más generalista" y la más rara. |
 | 5 | El nicho climático del venado se traslapa más con el de la zorra gris (0.955) que con el del coyote (0.801), que ocupa climas más secos y de invierno más frío. En ambos pares el traslape observado fue menor que en las 100 comparaciones aleatorias (p ≈ 0.01, el mínimo posible con 100 repeticiones); con el coyote la diferencia es clara (0.80 frente a un mínimo aleatorio de 0.96) y con la zorra es muy pequeña (0.955 frente a 0.957). |
 
 ## Fuentes de datos
@@ -148,7 +148,12 @@ encuentran en la guía de cada objetivo.
 
 ### Autora
 
-Brenda Duana Hernandez, Posgrado en Ciencias Biológicas, UNAM.
+MVZ. Brenda Duana Hernandez
+Posgrado en Ciencias Biológicas
+Universidad Nacional Autónoma de México.
 
 ### Docentes
-
+DR. ALEXANDER LLANES QUEVEDO
+DR. LUIS ENRIQUE SANCHEZ RAMOS
+DR. VICENTE DE JESUS CASTILLO CHORA
+DR. MASSIEL ALFONSO GONZALEZ
