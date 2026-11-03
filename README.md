@@ -149,11 +149,17 @@ encuentran en la guía de cada objetivo.
 ### Autora
 
 MVZ. Brenda Duana Hernandez
+
 Posgrado en Ciencias Biológicas
+
 Universidad Nacional Autónoma de México.
 
 ### Docentes
+
 DR. ALEXANDER LLANES QUEVEDO
+
 DR. LUIS ENRIQUE SANCHEZ RAMOS
+
 DR. VICENTE DE JESUS CASTILLO CHORA
+
 DR. MASSIEL ALFONSO GONZALEZ
